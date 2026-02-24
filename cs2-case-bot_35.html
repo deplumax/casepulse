@@ -1,0 +1,1935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CasePulse — CS2 Case Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+:root{--bg:#0a0c10;--card:#131920;--border:#1a2535;--accent:#00c8ff;--green:#00ff88;--red:#ff3b5c;--yellow:#ffd700;--orange:#ff8c00;--purple:#c084fc;--text:#c8d8e8;--muted:#4a6080}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.025) 2px,rgba(0,0,0,.025) 4px);pointer-events:none;z-index:999}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0c1520,#08101e);border-bottom:1px solid var(--border);padding:12px 22px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:200;backdrop-filter:blur(12px)}
+.logo{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.logo-i{width:32px;height:32px;background:linear-gradient(135deg,var(--accent),#0050ff);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 14px rgba(0,200,255,.25)}
+.logo-t{font-size:17px;font-weight:700;letter-spacing:2px;color:#fff}
+.logo-s{font-size:8px;color:var(--accent);font-family:'Share Tech Mono',monospace;letter-spacing:2px}
+.nav-tabs{display:flex;gap:3px;margin:0 auto}
+.nav-tab{padding:5px 14px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:.18s;text-transform:uppercase}
+.nav-tab:hover{border-color:var(--accent);color:var(--accent)}
+.nav-tab.active{background:rgba(0,200,255,.12);border-color:var(--accent);color:var(--accent)}
+.hdr-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.live-b{display:flex;align-items:center;gap:5px;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);border-radius:18px;padding:3px 10px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green)}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,255,136,.4)}50%{opacity:.7;box-shadow:0 0 0 5px rgba(0,255,136,0)}}
+.api-st{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:10px;padding:3px 9px}
+
+/* MAIN */
+.main{padding:16px 22px;max-width:1600px;margin:0 auto}
+
+/* STATS CARDS */
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;position:relative;overflow:hidden;transition:.2s}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--c,var(--accent))}
+.sc:hover{border-color:var(--accent);transform:translateY(-1px)}
+.sl{font-size:8px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;font-family:'Share Tech Mono',monospace}
+.sv{font-size:20px;font-weight:700;color:#fff;line-height:1}
+.ss{font-size:9px;color:var(--muted);margin-top:3px;font-family:'Share Tech Mono',monospace}
+
+/* CONTROLS */
+.ctrl{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cl{font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;white-space:nowrap;letter-spacing:1px}
+.cg{display:flex;align-items:center;gap:6px}
+input[type=range]{-webkit-appearance:none;width:88px;height:3px;background:var(--border);border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 5px var(--accent)}
+.rv{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent);min-width:30px}
+.divider{width:1px;height:18px;background:var(--border);flex-shrink:0}
+.tabs{display:flex;gap:3px;flex-wrap:wrap}
+.tab{padding:4px 10px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:.18s;text-transform:uppercase;white-space:nowrap}
+.tab:hover{border-color:var(--accent);color:var(--accent)}
+.tab.on{background:rgba(0,200,255,.1);border-color:var(--accent)!important;color:var(--accent)!important}
+.btn{background:linear-gradient(135deg,var(--accent),#0055ff);border:none;color:#fff;padding:6px 14px;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;transition:.18s;text-transform:uppercase;white-space:nowrap}
+.btn:hover{opacity:.9;box-shadow:0 3px 14px rgba(0,200,255,.3);transform:translateY(-1px)}
+.btn:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+/* PROGRESS */
+.prog{height:2px;background:var(--border);border-radius:2px;margin-bottom:12px;overflow:hidden}
+.pgf{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px;transition:width .3s;width:0%}
+
+/* TABLE WRAPPER */
+.tw{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:14px}
+.th{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.tt{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#fff}
+table{width:100%;border-collapse:collapse}
+thead th{padding:7px 10px;text-align:left;font-size:8px;font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spacing:2px;text-transform:uppercase;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border);white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s;cursor:pointer;-webkit-tap-highlight-color:rgba(0,200,255,.1)}
+tbody tr:hover{background:rgba(0,200,255,.04)}
+tbody tr:last-child{border-bottom:none}
+td{padding:8px 10px;font-size:12px;vertical-align:middle}
+.sec-row{cursor:default!important}
+.sec-row:hover{background:transparent!important}
+.sec-row td{background:rgba(255,255,255,.01);padding:4px 10px;font-size:8px;font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid var(--border)}
+
+/* CELLS */
+.nc{display:flex;align-items:center;gap:8px}
+.ci{width:30px;height:30px;border-radius:4px;background:#1a2535;border:1px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+.cn{font-weight:600;font-size:12px;color:#fff;line-height:1.2}
+.cm{font-size:8px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:2px;display:flex;gap:3px;flex-wrap:wrap;align-items:center}
+.bdg{display:inline-block;padding:1px 4px;border-radius:2px;font-size:7px;font-family:'Share Tech Mono',monospace;letter-spacing:.5px;font-weight:700;text-transform:uppercase}
+.b-recent{background:rgba(0,200,255,.15);color:var(--accent)}
+.b-op{background:rgba(192,132,252,.15);color:var(--purple)}
+.b-hot{background:rgba(255,59,92,.15);color:var(--red)}
+.b-cheap{background:rgba(0,255,136,.15);color:var(--green)}
+.vrd{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.5px;white-space:nowrap}
+.vrd.buy{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.25)}
+.vrd.skip{background:rgba(255,59,92,.12);color:var(--red);border:1px solid rgba(255,59,92,.25)}
+.vrd.watch{background:rgba(255,215,0,.12);color:var(--yellow);border:1px solid rgba(255,215,0,.25)}
+.dlt{display:inline-flex;align-items:center;gap:2px;font-family:'Share Tech Mono',monospace;font-size:10px;font-weight:600;padding:2px 5px;border-radius:3px}
+.dlt.dn{background:rgba(0,255,136,.1);color:var(--green)}
+.dlt.up{background:rgba(255,59,92,.1);color:var(--red)}
+.dlt.fl{background:rgba(255,215,0,.1);color:var(--yellow)}
+.steam-btn{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:4px;background:rgba(0,200,255,.12);border:1px solid rgba(0,200,255,.25);color:var(--accent);font-family:'Rajdhani',sans-serif;font-size:10px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:.18s;text-decoration:none;white-space:nowrap}
+.steam-btn:hover{background:rgba(0,200,255,.22);border-color:var(--accent);box-shadow:0 0 10px rgba(0,200,255,.2)}
+th.srt{cursor:pointer;user-select:none}
+th.srt:hover{color:var(--accent)}
+th.sa::after{content:' ↑';color:var(--accent)}
+th.sd::after{content:' ↓';color:var(--accent)}
+.mono{font-family:'Share Tech Mono',monospace}
+.empty{text-align:center;padding:22px;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:10px}
+.empty div{font-size:20px;margin-bottom:5px}
+
+/* RANGE TABS (chart) */
+.rtab{padding:3px 9px;border-radius:4px;border:1px solid #1a2535;background:transparent;color:#4a6080;font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;transition:.18s;letter-spacing:1px}
+.rtab:hover{border-color:#00c8ff;color:#00c8ff}
+.rtab.on{background:rgba(0,200,255,.1);border-color:#00c8ff;color:#00c8ff}
+
+/* LOADING OVERLAY */
+.lov{position:fixed;inset:0;background:rgba(8,12,18,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;backdrop-filter:blur(4px)}
+.lsp{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ln{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:2px;margin-bottom:4px;text-align:center}
+.lp{font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px}
+.lb{width:150px;height:2px;background:var(--border);border-radius:2px;margin-top:9px;overflow:hidden}
+.lbf{height:100%;background:var(--accent);border-radius:2px;transition:width .3s}
+
+/* TOASTS */
+.tc{position:fixed;top:60px;right:12px;z-index:9998;display:flex;flex-direction:column;gap:5px;pointer-events:none}
+.tst{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:6px;padding:7px 11px;display:flex;align-items:center;gap:7px;min-width:220px;font-size:11px;animation:tIn .25s ease;box-shadow:0 4px 14px rgba(0,0,0,.5)}
+@keyframes tIn{from{opacity:0;transform:translateX(12px)}to{opacity:1;transform:translateX(0)}}
+.tst strong{display:block;color:#fff;font-size:12px;margin-bottom:1px}
+
+/* PORTFOLIO */
+.pf-input{width:100%;background:#0d1420;border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:13px;outline:none}
+.pf-input:focus{border-color:var(--accent)}
+.pf-label{font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:5px;display:block}
+.qty-btn{width:22px;height:22px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text);border-radius:3px;cursor:pointer;font-size:13px;line-height:1;padding:0;transition:.15s}
+.qty-btn:hover{border-color:var(--accent);color:var(--accent)}
+.st-btn{padding:2px 7px;border-radius:3px;cursor:pointer;font-size:9px;font-family:'Share Tech Mono',monospace;transition:.15s;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--muted)}
+.st-btn.owned{background:rgba(0,255,136,.12);border-color:rgba(0,255,136,.3);color:var(--green)}
+.st-btn.sold{background:rgba(255,59,92,.12);border-color:rgba(255,59,92,.3);color:var(--red)}
+
+/* CHART MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:800;backdrop-filter:blur(6px);padding:16px;overflow-y:auto;display:none}
+.modal-box{background:#0d1420;border:1px solid var(--border);border-radius:13px;max-width:900px;margin:0 auto;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.7)}
+.cm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-bottom:1px solid var(--border)}
+@media(max-width:500px){.cm-stats{grid-template-columns:repeat(2,1fr)}.cm-stats>div:nth-child(odd){border-right:1px solid var(--border)}.cm-stats>div:nth-child(-n+2){border-bottom:1px solid var(--border)}}
+
+/* RESPONSIVE */
+@media(max-width:1100px){.main{padding:12px 14px}.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){
+  .hdr{padding:10px 12px;gap:8px}
+  .logo-t{font-size:14px}.logo-s{display:none}.api-st{display:none}
+  .nav-tab{font-size:10px;padding:4px 10px}
+  .live-b{font-size:9px;padding:3px 7px}
+  #refresh-ring{display:none}
+  .main{padding:10px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:7px}
+  .sc{padding:10px 12px}.sv{font-size:17px}
+  .ctrl{flex-direction:column;align-items:stretch;gap:8px;padding:10px 12px}
+  .ctrl .divider{width:100%;height:1px}
+  .cg{justify-content:space-between}
+  input[type=range]{width:150px}
+  .tabs{gap:3px;flex-wrap:wrap}.tab{font-size:10px;padding:3px 7px}
+  .col-hide{display:none}
+  td.col-hide{display:none}
+  td{padding:7px 8px;font-size:11px}
+  .modal-bg{padding:0}.modal-box{border-radius:0;min-height:100vh}
+  .pf-add-row{flex-direction:column;align-items:stretch}
+  .pf-add-row > *{width:100%!important}
+  .vrd-wrap{display:flex;flex-direction:column;gap:4px;align-items:stretch}
+  .steam-btn{font-size:11px;padding:8px 10px;width:100%;justify-content:center;display:flex}
+}
+@media(max-width:400px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .nav-tab{font-size:9px;padding:3px 7px}
+  .tab{font-size:8px;padding:2px 5px}
+}
+/* Price change animations */
+@keyframes flashUp{0%{background:rgba(0,255,136,.25)}100%{background:transparent}}
+@keyframes flashDown{0%{background:rgba(255,59,92,.25)}100%{background:transparent}}
+.price-up{animation:flashUp 1.5s ease-out}
+.price-down{animation:flashDown 1.5s ease-out}
+.arrow-up{color:var(--green);font-size:10px;margin-left:3px;animation:flashUp 1.5s ease-out}
+.arrow-down{color:var(--red);font-size:10px;margin-left:3px;animation:flashDown 1.5s ease-out}
+</style>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="lov" id="lov">
+  <div class="lsp"></div>
+  <div class="ln" id="ln">CONNECTING...</div>
+  <div class="lp" id="lp">Fetching market data...</div>
+  <div class="lb"><div class="lbf" id="lbf" style="width:0%"></div></div>
+</div>
+
+<!-- TOASTS -->
+<div class="tc" id="tc"></div>
+
+<!-- CHART MODAL -->
+<div class="modal-bg" id="chartModal" onclick="closeChartModal(event)">
+  <div class="modal-box">
+    <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px">
+      <div id="cmEmoji" style="font-size:22px"></div>
+      <div><div id="cmTitle" style="font-size:17px;font-weight:700;color:#fff;letter-spacing:1px"></div><div id="cmSub" style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:2px"></div></div>
+      <a id="cmBuyBtn" href="#" target="_blank" style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,var(--green),#00aa55);color:#000;padding:7px 14px;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;text-decoration:none;white-space:nowrap">🛒 BUY ON STEAM</a>
+      <button onclick="document.getElementById('chartModal').style.display='none'" style="background:transparent;border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:5px;cursor:pointer;font-size:15px;margin-left:8px;flex-shrink:0;transition:.18s" onmouseover="this.style.borderColor='#ff3b5c';this.style.color='#ff3b5c'" onmouseout="this.style.borderColor='#1a2535';this.style.color='#4a6080'">✕</button>
+    </div>
+    <div class="cm-stats" id="cmStats"></div>
+    <div style="padding:10px 18px;display:flex;gap:6px;border-bottom:1px solid var(--border);background:rgba(0,0,0,.2);flex-wrap:wrap;align-items:center">
+      <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-right:4px">RANGE:</span>
+      <button class="rtab" onclick="setRange(7,this)">7D</button>
+      <button class="rtab on" onclick="setRange(30,this)">30D</button>
+      <button class="rtab" onclick="setRange(90,this)">3M</button>
+      <button class="rtab" onclick="setRange(180,this)">6M</button>
+      <button class="rtab" onclick="setRange(365,this)">1Y</button>
+      <button class="rtab" onclick="setRange(0,this)">ALL</button>
+    </div>
+    <div style="padding:18px;position:relative;min-height:260px">
+      <div id="cmLoading" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px">
+        <div style="width:26px;height:26px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px"></div>
+        LOADING PRICE HISTORY...
+      </div>
+      <canvas id="priceChart" style="display:none;max-height:280px"></canvas>
+    </div>
+    <div id="cmInsight" style="margin:0 18px 18px;padding:12px 14px;background:rgba(0,200,255,.05);border:1px solid rgba(0,200,255,.15);border-radius:7px;font-size:11px;line-height:1.6;display:none"></div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="logo">
+    <div class="logo-i">📦</div>
+    <div>
+      <div class="logo-t">CASEPULSE</div>
+      <div class="logo-s">CS2 CASE ANALYTICS</div>
+    </div>
+  </div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" id="nav-market" onclick="showPage('market')">📊 Market</button>
+    <button class="nav-tab" id="nav-portfolio" onclick="showPage('portfolio')">💼 Portfolio</button>
+  </div>
+  <div class="hdr-r">
+    <div class="api-st" id="apiSt">API: waiting</div>
+    <div class="live-b">
+      <div class="dot"></div>LIVE
+      <span id="cd" style="margin-left:4px;color:var(--muted)">90s</span>
+    </div>
+    <div style="width:18px;height:18px;flex-shrink:0">
+      <svg viewBox="0 0 18 18" style="transform:rotate(-90deg);width:18px;height:18px">
+        <circle cx="9" cy="9" r="7" fill="none" stroke="#1a2535" stroke-width="2"/>
+        <circle id="ring-arc" cx="9" cy="9" r="7" fill="none" stroke="#00c8ff" stroke-width="2" stroke-dasharray="44" stroke-dashoffset="0" stroke-linecap="round" style="transition:stroke-dashoffset 1s linear"/>
+      </svg>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════ MARKET PAGE ═══════════════ -->
+<div id="page-market">
+<main class="main">
+
+<div class="stats">
+  <div class="sc" style="--c:var(--accent)"><div class="sl">// Cases Loaded</div><div class="sv" id="s0">—</div><div class="ss" id="s0s">waiting...</div></div>
+  <div class="sc" style="--c:var(--green)"><div class="sl">// ✅ BUY</div><div class="sv" id="s1" style="color:var(--green)">—</div><div class="ss">below average</div></div>
+  <div class="sc" style="--c:var(--red)"><div class="sl">// ❌ SKIP</div><div class="sv" id="s2" style="color:var(--red)">—</div><div class="ss">above average</div></div>
+  <div class="sc" style="--c:var(--yellow)"><div class="sl">// 👁 WATCH</div><div class="sv" id="s3" style="color:var(--yellow)">—</div><div class="ss">within range</div></div>
+  <div class="sc" style="--c:var(--orange)"><div class="sl">// 🏆 Best BUY</div><div class="sv" id="s4" style="font-size:11px;margin-top:3px;color:var(--green)">—</div><div class="ss" id="s4s">—</div></div>
+</div>
+
+<div class="prog"><div class="pgf" id="pgf"></div></div>
+
+<div class="ctrl">
+  <div class="cl">BUY THRESHOLD</div>
+  <div class="cg"><input type="range" id="bT" min="5" max="40" value="15"><span class="rv" id="bTv">15%</span></div>
+  <div class="divider"></div>
+  <div class="cl">SKIP THRESHOLD</div>
+  <div class="cg"><input type="range" id="sT" min="5" max="40" value="15"><span class="rv" id="sTv">15%</span></div>
+  <div class="divider"></div>
+  <div class="tabs">
+    <button class="tab on" onclick="setCat('all',this)">All (42)</button>
+    <button class="tab" onclick="setCat('recent',this)" style="border-color:rgba(0,200,255,.3)">🆕 Recent</button>
+    <button class="tab" onclick="setCat('operation',this)" style="border-color:rgba(192,132,252,.3)">🟣 Operation</button>
+    <button class="tab" onclick="setCat('old',this)" style="border-color:rgba(255,140,0,.3)">🟠 Old</button>
+    <button class="tab" onclick="setCat('buy',this)" style="border-color:rgba(0,255,136,.3);color:var(--green)">✅ BUY only</button>
+    <button class="tab" onclick="setCat('cheap',this)" style="border-color:rgba(255,200,0,.3);color:#ffc800">💰 Cheap</button>
+  </div>
+  <button class="btn" id="rfBtn" onclick="init(true)" style="margin-left:auto">⟳ REFRESH</button>
+</div>
+
+<div class="tw">
+  <div class="th">
+    <div class="tt">📦 CS2 CASES — STEAM MARKET</div>
+    <div class="mono" style="font-size:9px;color:var(--muted)" id="upd">—</div>
+  </div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th style="min-width:200px">CASE</th>
+        <th class="srt col-hide" data-c="age" onclick="sortBy('age')">RELEASE</th>
+        <th class="srt" data-c="qty" onclick="sortBy('qty')">VOLUME</th>
+        <th class="srt" data-c="price" onclick="sortBy('price')">PRICE</th>
+        <th class="col-hide" title="Weighted average price of cases with similar trading volume" style="cursor:help">AVG PRICE ⓘ</th>
+        <th class="srt" data-c="delta" onclick="sortBy('delta')">DELTA</th>
+        <th class="srt col-hide" data-c="score" onclick="sortBy('score')">SCORE</th>
+        <th>VERDICT</th>
+      </tr></thead>
+      <tbody id="tbody"><tr><td colspan="8" class="empty"><div>⏳</div>Loading...</td></tr></tbody>
+    </table>
+  </div>
+  <div style="padding:5px 12px;font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--muted);border-top:1px solid var(--border)">
+    Click any row to see price history chart. DELTA = vs weighted avg. SCORE = price percentile.
+  </div>
+</div>
+
+</main>
+</div>
+
+<!-- ═══════════════ PORTFOLIO PAGE ═══════════════ -->
+<div id="page-portfolio" style="display:none">
+<main class="main">
+
+<div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+  <button onclick="openPfChart()" class="btn" style="padding:6px 14px;font-size:11px">📈 Value Chart</button>
+</div>
+<div class="stats" style="grid-template-columns:repeat(4,1fr)">
+  <div class="sc" style="--c:var(--accent)"><div class="sl">// Total Invested</div><div class="sv" id="pf-invested" style="font-size:17px">$0.00</div><div class="ss">purchase price</div></div>
+  <div class="sc" style="--c:var(--green)"><div class="sl">// Current Value</div><div class="sv" id="pf-value" style="font-size:17px">$0.00</div><div class="ss">at live prices</div></div>
+  <div class="sc" style="--c:var(--yellow)"><div class="sl">// P&L</div><div class="sv" id="pf-pnl" style="font-size:17px">$0.00</div><div class="ss" id="pf-pnl-pct">0.00%</div></div>
+  <div class="sc" style="--c:var(--purple)"><div class="sl">// Items</div><div class="sv" id="pf-count">0</div><div class="ss" id="pf-units">0 units</div></div>
+</div>
+
+<div class="tw" style="margin-bottom:14px">
+  <div class="th">
+    <div class="tt">➕ Add Item</div>
+    <div style="display:flex;gap:3px">
+      <button id="add-tab-case" onclick="pfSetAddTab('case')" class="st-btn owned" style="font-size:10px;padding:3px 10px">📦 Case</button>
+      <button id="add-tab-skin" onclick="pfSetAddTab('skin')" class="st-btn" style="font-size:10px;padding:3px 10px">🔫 Skin</button>
+    </div>
+  </div>
+  <div style="padding:14px 16px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end" class="pf-add-row">
+      <!-- CASE FIELDS -->
+      <div id="pf-case-fields" style="display:contents">
+      <div style="flex:1;min-width:180px">
+        <label class="pf-label">CASE</label>
+        <select id="pf-select" class="pf-input" style="cursor:pointer">
+          <option value="">— Select case —</option>
+        </select>
+      </div>
+      <div style="width:80px">
+        <label class="pf-label">QTY</label>
+        <input id="pf-qty" type="number" min="1" max="9999" value="1" class="pf-input" style="font-family:'Share Tech Mono',monospace">
+      </div>
+      <div style="width:115px">
+        <label class="pf-label">BUY PRICE ($)</label>
+        <input id="pf-buyprice" type="number" min="0.01" step="0.01" placeholder="current" class="pf-input" style="font-family:'Share Tech Mono',monospace">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding-bottom:1px">
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'Share Tech Mono',monospace;white-space:nowrap">
+          <input type="checkbox" id="pf-owned" style="accent-color:var(--green);width:13px;height:13px"> owned
+        </label>
+        <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer;font-family:'Share Tech Mono',monospace;white-space:nowrap">
+          <input type="checkbox" id="pf-sold" style="accent-color:var(--red);width:13px;height:13px"> sold
+        </label>
+      </div>
+      </div><!-- /pf-case-fields -->
+      <!-- SKIN MODE -->
+      <div id="pf-skin-fields" style="display:none;flex:1;gap:10px;flex-wrap:wrap;align-items:flex-end;width:100%">
+        <div style="flex:2;min-width:200px">
+          <label class="pf-label">SKIN NAME</label>
+          <input id="pf-skin-name" type="text" placeholder="e.g. AK-47 | Redline" class="pf-input" autocomplete="off" oninput="pfSkinSearch(this.value)">
+          <div id="pf-skin-suggestions" style="position:relative;z-index:100"></div>
+        </div>
+        <div style="width:140px">
+          <label class="pf-label">QUALITY</label>
+          <select id="pf-skin-quality" class="pf-input" style="cursor:pointer">
+            <option value="Factory New">Factory New</option>
+            <option value="Minimal Wear">Minimal Wear</option>
+            <option value="Field-Tested" selected>Field-Tested</option>
+            <option value="Well-Worn">Well-Worn</option>
+            <option value="Battle-Scarred">Battle-Scarred</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;padding-bottom:1px">
+          <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;font-family:'Share Tech Mono',monospace">
+            <input type="checkbox" id="pf-skin-stattrak" style="accent-color:var(--orange);width:13px;height:13px"> StatTrak™
+          </label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;font-family:'Share Tech Mono',monospace">
+            <input type="checkbox" id="pf-skin-souvenir" style="accent-color:var(--yellow);width:13px;height:13px"> Souvenir
+          </label>
+        </div>
+      </div>
+      </div><!-- /pf-case-fields -->
+            <button onclick="pfAdd()" class="btn" style="padding:8px 18px;margin-bottom:1px">➕ ADD</button>
+    </div>
+  </div>
+</div>
+
+<!-- STEAM IMPORT PANEL -->
+<div class="tw" style="margin-bottom:14px;border-color:rgba(0,200,255,.2)">
+  <div class="th" style="background:rgba(0,200,255,.04)">
+    <div class="tt" style="color:var(--accent)">⚡ Import Steam Inventory</div>
+    <span style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace">AUTO-ADD ALL YOUR CS2 ITEMS</span>
+  </div>
+  <div style="padding:14px 16px">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+      <div style="flex:1;min-width:220px">
+        <label class="pf-label">STEAM PROFILE URL OR STEAM ID</label>
+        <input id="steam-import-id" type="text" placeholder="steamcommunity.com/id/username  or  76561198XXXXXXXXX" class="pf-input" style="font-family:'Share Tech Mono',monospace;font-size:11px">
+      </div>
+
+      <button onclick="steamImport()" id="import-btn" class="btn" style="padding:8px 18px;background:linear-gradient(135deg,rgba(0,200,255,.8),rgba(0,80,255,.8))">⚡ IMPORT</button>
+    </div>
+    <div id="import-progress" style="display:none;margin-top:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span id="import-status" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent)">Loading inventory...</span>
+        <span id="import-count" style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted)"></span>
+      </div>
+      <div style="height:3px;background:var(--border);border-radius:2px;overflow:hidden">
+        <div id="import-bar" style="height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:2px;transition:width .3s;width:0%"></div>
+      </div>
+      <div id="import-result" style="margin-top:8px;font-size:11px;color:var(--muted);font-family:'Share Tech Mono',monospace"></div>
+    </div>
+    <div style="margin-top:10px;font-size:9px;color:rgba(74,96,128,0.7);font-family:'Share Tech Mono',monospace;line-height:1.6">
+      ⚠️ Your Steam inventory must be <strong style="color:var(--muted)">Public</strong> in Steam Privacy Settings.
+    </div>
+  </div>
+</div>
+
+<div class="tw">
+  <div class="th">
+    <div class="tt">💼 My Items</div>
+    <button onclick="pfRefreshPrices()" id="refresh-prices-btn" class="st-btn" style="font-size:10px;padding:3px 10px">🔄 Refresh Prices</button>
+    <button onclick="pfClear()" style="background:transparent;border:1px solid rgba(255,59,92,.3);color:var(--red);padding:3px 10px;border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;letter-spacing:1px;transition:.15s" onmouseover="this.style.background='rgba(255,59,92,.1)'" onmouseout="this.style.background='transparent'">CLEAR ALL</button>
+  </div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr>
+        <th style="min-width:190px">ITEM</th>
+        <th>QTY</th>
+        <th>BUY PRICE</th>
+        <th>NOW</th>
+        <th class="col-hide">INVESTED</th>
+        <th class="col-hide">VALUE</th>
+        <th>P&L</th>
+        <th>STATUS</th>
+        <th></th>
+      </tr></thead>
+      <tbody id="pf-tbody">
+        <tr><td colspan="9" class="empty"><div>📭</div>No cases yet — add some above</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+</main>
+</div>
+
+<script>
+const CASES = [
+  // release dates from Steam / csgo wiki
+  {name:"Fever Case",                     hash:"Fever Case",                        cat:"regular", e:"🔥", released:"2024-10-01"},
+  {name:"Gallery Case",                   hash:"Gallery Case",                      cat:"regular", e:"🖼️", released:"2024-05-22"},
+  {name:"Kilowatt Case",                  hash:"Kilowatt Case",                     cat:"regular", e:"⚡", released:"2024-01-16"},
+  {name:"Recoil Case",                    hash:"Recoil Case",                       cat:"regular", e:"🔵", released:"2022-07-01"},
+  {name:"Revolution Case",               hash:"Revolution Case",                   cat:"regular", e:"🌀", released:"2023-02-09"},
+  {name:"Dreams & Nightmares Case",       hash:"Dreams %26 Nightmares Case",        cat:"regular", e:"🌙", released:"2022-01-20"},
+  {name:"Fracture Case",                  hash:"Fracture Case",                     cat:"regular", e:"💥", released:"2020-08-06"},
+  {name:"Snakebite Case",                 hash:"Snakebite Case",                    cat:"regular", e:"🐍", released:"2021-05-03"},
+  {name:"Prisma 2 Case",                  hash:"Prisma 2 Case",                     cat:"regular", e:"💎", released:"2020-03-31"},
+  {name:"CS20 Case",                      hash:"CS20 Case",                         cat:"regular", e:"🎂", released:"2019-10-18"},
+  {name:"Prisma Case",                    hash:"Prisma Case",                       cat:"regular", e:"🔷", released:"2019-03-14"},
+  {name:"Operation Riptide Case",         hash:"Operation Riptide Case",            cat:"operation",e:"🌊", released:"2021-09-21"},
+  {name:"Operation Broken Fang Case",     hash:"Operation Broken Fang Case",        cat:"operation",e:"🦷", released:"2020-12-03"},
+  {name:"Shattered Web Case",             hash:"Shattered Web Case",                cat:"operation",e:"🕸️", released:"2019-11-18"},
+  {name:"Operation Hydra Case",           hash:"Operation Hydra Case",              cat:"operation",e:"🐲", released:"2017-05-23"},
+  {name:"Operation Wildfire Case",        hash:"Operation Wildfire Case",           cat:"operation",e:"🌋", released:"2016-02-17"},
+  {name:"Operation Vanguard Weapon Case", hash:"Operation Vanguard Weapon Case",    cat:"operation",e:"🛡️", released:"2014-11-11"},
+  {name:"Operation Breakout Weapon Case", hash:"Operation Breakout Weapon Case",    cat:"operation",e:"🔓", released:"2014-07-01"},
+  {name:"Operation Phoenix Weapon Case",  hash:"Operation Phoenix Weapon Case",     cat:"operation",e:"🦅", released:"2014-02-20"},
+  {name:"Operation Bravo Case",           hash:"Operation Bravo Case",              cat:"operation",e:"💪", released:"2013-09-19"},
+  {name:"Danger Zone Case",               hash:"Danger Zone Case",                  cat:"regular", e:"☢️", released:"2018-12-06"},
+  {name:"Horizon Case",                   hash:"Horizon Case",                      cat:"regular", e:"🌅", released:"2018-08-03"},
+  {name:"Clutch Case",                    hash:"Clutch Case",                       cat:"regular", e:"🤝", released:"2018-02-15"},
+  {name:"Spectrum 2 Case",                hash:"Spectrum 2 Case",                   cat:"regular", e:"🌈", released:"2017-09-14"},
+  {name:"Spectrum Case",                  hash:"Spectrum Case",                     cat:"regular", e:"🎨", released:"2017-03-15"},
+  {name:"Glove Case",                     hash:"Glove Case",                        cat:"regular", e:"🧤", released:"2016-11-28"},
+  {name:"Gamma 2 Case",                   hash:"Gamma 2 Case",                      cat:"regular", e:"☢",  released:"2016-09-01"},
+  {name:"Gamma Case",                     hash:"Gamma Case",                        cat:"regular", e:"⚗️", released:"2016-06-15"},
+  {name:"Chroma 3 Case",                  hash:"Chroma 3 Case",                     cat:"regular", e:"🎭", released:"2016-04-26"},
+  {name:"Chroma 2 Case",                  hash:"Chroma 2 Case",                     cat:"regular", e:"🎪", released:"2015-09-17"},
+  {name:"Chroma Case",                    hash:"Chroma Case",                       cat:"regular", e:"🔮", released:"2015-01-08"},
+  {name:"Revolver Case",                  hash:"Revolver Case",                     cat:"regular", e:"🔫", released:"2015-12-08"},
+  {name:"Shadow Case",                    hash:"Shadow Case",                       cat:"regular", e:"👤", released:"2015-09-17"},
+  {name:"Falchion Case",                  hash:"Falchion Case",                     cat:"regular", e:"⚔️", released:"2015-05-26"},
+  {name:"Huntsman Weapon Case",           hash:"Huntsman Weapon Case",              cat:"regular", e:"🏹", released:"2014-05-01"},
+  {name:"Winter Offensive Weapon Case",   hash:"Winter Offensive Weapon Case",      cat:"regular", e:"❄️", released:"2013-12-18"},
+  {name:"CS:GO Weapon Case 3",            hash:"CS%3AGO Weapon Case 3",             cat:"regular", e:"🗡️", released:"2013-11-08"},
+  {name:"CS:GO Weapon Case 2",            hash:"CS%3AGO Weapon Case 2",             cat:"regular", e:"📦", released:"2013-03-27"},
+  {name:"CS:GO Weapon Case",              hash:"CS%3AGO Weapon Case",               cat:"regular", e:"🎁", released:"2013-08-14"},
+  {name:"eSports 2014 Summer Case",       hash:"eSports 2014 Summer Case",          cat:"regular", e:"🏆", released:"2014-07-10"},
+  {name:"eSports 2013 Winter Case",       hash:"eSports 2013 Winter Case",          cat:"regular", e:"⛄", released:"2013-12-18"},
+  {name:"eSports 2013 Case",              hash:"eSports 2013 Case",                 cat:"regular", e:"🎮", released:"2013-09-19"},
+];
+
+// ── Age helpers ──
+const NOW = Date.now();
+function ageYears(released){return(NOW-new Date(released).getTime())/(1000*60*60*24*365.25);}
+function isRecent(c){return ageYears(c.released)<=3;}
+function isOld(c){return ageYears(c.released)>3;}
+
+// ── State ──
+let data=[], prevPrices={}, sortCol='qty', sortDir=-1, filterCat='all', countdown=90, cdTimer;
+
+// ── Sliders ──
+document.getElementById('bT').addEventListener('input',function(){document.getElementById('bTv').textContent=this.value+'%';if(data.length){render(data);updateStats(data);}});
+document.getElementById('sT').addEventListener('input',function(){document.getElementById('sTv').textContent=this.value+'%';if(data.length){render(data);updateStats(data);}});
+const getBT=()=>parseInt(document.getElementById('bT').value)/100;
+const getST=()=>parseInt(document.getElementById('sT').value)/100;
+
+async function proxyFetch(url){
+  const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url));
+  const w = await r.json();
+  return JSON.parse(w.contents);
+}
+async function fetchCase(cas){
+  const url='https://steamcommunity.com/market/priceoverview/?appid=730&currency=1&market_hash_name='+cas.hash;
+  try{
+    const d=await proxyFetch(url);
+    if(!d?.success)return{...cas,price:0,volume:0};
+    const price=parseFloat((d.lowest_price||'0').replace(/[^0-9.]/g,''))||0;
+    const volume=parseInt((d.volume||'0').replace(/[^0-9]/g,''))||0;
+    return{...cas,price,volume};
+  }catch(e){return{...cas,price:0,volume:0};}
+}
+
+async function init(forceRefresh=false){
+  const btn=document.getElementById('rfBtn');
+  btn.disabled=true;btn.textContent='⟳ ...';
+  document.getElementById('lov').style.display='flex';
+  setL('CONNECTING TO STEAM MARKET...','Loading case prices...',0);
+  data=CASES.map(c=>({...c,price:0,volume:0}));
+  render(data);updateStats(data);
+  document.getElementById('lov').style.display='none';
+  await fetchAll();
+  btn.disabled=false;btn.textContent='⟳ REFRESH';
+  resetCD();
+}
+
+async function fetchAll(){
+  setApiSt('🔄 fetching...');
+  const BATCH=8,DELAY=300;
+  const results=new Array(CASES.length);
+  for(let i=0;i<CASES.length;i+=BATCH){
+    const batch=CASES.slice(i,i+BATCH);
+    const br=await Promise.all(batch.map(c=>fetchCase(c)));
+    br.forEach((res,j)=>{results[i+j]=res;});
+    const sofar=results.filter(Boolean);
+    const loaded=sofar.filter(r=>r.price>0).length;
+    if(sofar.some(r=>r.price>0)){
+      checkChanges(sofar);
+      data=sofar.concat(CASES.slice(sofar.length).map(c=>({...c,price:0,volume:0})));
+      render(data);updateStats(data);
+    }
+    const pct=Math.round((i+BATCH)/CASES.length*100);
+    setPgf(pct);
+    document.getElementById('upd').textContent='// LOADING '+loaded+' prices... ('+pct+'%)';
+    if(i+BATCH<CASES.length)await sleep(DELAY);
+  }
+  const final=results.filter(Boolean);
+  if(!final.some(r=>r.price>0)){
+    data=CASES.map(c=>({...c,price:0,volume:0}));
+    setApiSt('⚠️ Steam unavailable');
+  }else{
+    data=final;
+    setApiSt('✅ Steam Market · '+data.filter(d=>d.price>0).length+' cases');
+  }
+  render(data);updateStats(data);
+  setPgf(100);
+  document.getElementById('s0s').textContent='loaded '+data.filter(d=>d.price>0).length+'/'+CASES.length;
+  document.getElementById('upd').textContent='// UPDATED '+new Date().toLocaleTimeString('en');
+  const pfPage=document.getElementById('page-portfolio');
+  if(pfPage&&pfPage.style.display!=='none')pfRender();
+}
+
+function wAvg(item,pool){
+  const sim=pool.filter(d=>d.name!==item.name&&d.volume>0&&item.volume>0&&d.volume/item.volume>=.5&&d.volume/item.volume<=2);
+  const src=sim.length>=3?sim:pool.filter(d=>d.name!==item.name&&d.price>0);
+  if(!src.length)return item.price;
+  return src.reduce((s,d)=>s+d.price,0)/src.length;
+}
+function getV(price,avg){const d=(price-avg)/avg;return d<=-getBT()?'buy':d>=getST()?'skip':'watch';}
+function getScore(price,prices){
+  const s=[...prices].filter(p=>p>0).sort((a,b)=>a-b);
+  if(!s.length)return 0;
+  const r=s.findIndex(p=>price<=p);
+  return r<0?0:Math.round((1-r/Math.max(s.length-1,1))*100);
+}
+
+function render(pool){
+  const vp=pool.filter(d=>d.price>0);
+  const allP=vp.map(d=>d.price);
+  let view;
+  if(filterCat==='all')view=pool;
+  else if(filterCat==='recent')view=pool.filter(c=>isRecent(c));
+  else if(filterCat==='old')view=pool.filter(c=>isOld(c)&&c.cat!=='operation');
+  else if(filterCat==='operation')view=pool.filter(c=>c.cat==='operation');
+  else if(filterCat==='buy')view=vp.filter(d=>getV(d.price,wAvg(d,vp))==='buy');
+  else view=pool;
+
+  view=[...view].sort((a,b)=>{
+    let av,bv;
+    if(sortCol==='price'){av=a.price;bv=b.price;}
+    else if(sortCol==='qty'){av=a.volume;bv=b.volume;}
+    else if(sortCol==='age'){av=new Date(a.released);bv=new Date(b.released);}
+    else if(sortCol==='score'){av=a.price>0?getScore(a.price,allP):0;bv=b.price>0?getScore(b.price,allP):0;}
+    else{const aa=wAvg(a,vp),bb=wAvg(b,vp);av=a.price>0&&aa>0?(a.price-aa)/aa:99;bv=b.price>0&&bb>0?(b.price-bb)/bb:99;}
+    return sortDir*(av-bv);
+  });
+
+  const tbody=document.getElementById('tbody');
+  if(!view.length){tbody.innerHTML='<tr><td colspan="8" class="empty"><div>🔍</div>No cases match filter</td></tr>';return;}
+
+  const secOf=c=>c.cat==='operation'?'OPERATION CASES':isRecent(c)?'RECENT (≤3 years)':'OLDER CASES (3+ years)';
+  let html='',lastSec='';
+  view.forEach(item=>{
+    if(filterCat==='all'||filterCat==='recent'||filterCat==='old'||filterCat==='operation'){
+      const sec=secOf(item);
+      if(sec!==lastSec){
+        const cnt=view.filter(i=>secOf(i)===sec).length;
+        html+='<tr class="sec-row"><td colspan="8">── '+sec+' ('+cnt+')</td></tr>';
+        lastSec=sec;
+      }
+    }
+    const price=item.price||0;
+    const avg=price>0?wAvg(item,vp):0;
+    const d=avg>0&&price>0?(price-avg)/avg:0;
+    const v=price>0?getV(price,avg):'watch';
+    const sc=price>0?getScore(price,allP):0;
+    const scC=sc>=70?'var(--green)':sc>=40?'var(--yellow)':'var(--red)';
+    const dStr=price>0?(d>=0?'+':'')+(d*100).toFixed(1)+'%':'—';
+    const dCls=d<-.01?'dn':d>.01?'up':'fl';
+    const dIco=d<-.01?'↓':d>.01?'↑':'→';
+    const pC=v==='buy'?'var(--green)':v==='skip'?'var(--red)':'var(--text)';
+    const age=ageYears(item.released);
+    const ageStr=age<1?Math.round(age*12)+'mo':age.toFixed(1)+'yr';
+    const vrdHTML=price>0?(v==='buy'?'<span class="vrd buy">✅ BUY</span>':v==='skip'?'<span class="vrd skip">❌ SKIP</span>':'<span class="vrd watch">👁 WATCH</span>'):'<span style="color:var(--muted);font-size:9px">loading...</span>';
+    const buyURL='https://steamcommunity.com/market/listings/730/'+encodeURIComponent(item.name);
+    const sn=item.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    html+='<tr onclick="openChart(\''+sn+'\')">'+
+      '<td><div class="nc"><div class="ci">'+item.e+'</div><div>'+
+      '<div class="cn">'+item.name+'</div>'+
+      '<div class="cm">'+
+      (isRecent(item)?'<span class="bdg b-recent">NEW</span>':'')+
+      (item.cat==='operation'?'<span class="bdg b-op">OP</span>':'')+
+      (item.volume>400000?'<span class="bdg b-hot">HOT</span>':'')+
+      (price>0&&price<0.20?'<span class="bdg b-cheap">CHEAP</span>':'')+
+      '</div></div></div></td>'+
+      '<td class="col-hide"><div class="mono" style="font-size:10px;color:'+(isRecent(item)?'var(--accent)':'var(--muted)')+'">'+new Date(item.released).getFullYear()+'</div>'+
+      '<div class="mono" style="font-size:9px;color:var(--muted)">'+ageStr+' ago</div></td>'+
+      '<td class="mono" style="font-size:10px">'+(item.volume>0?item.volume.toLocaleString('en'):'—')+'</td>'+
+      '<td class="mono" data-pn="'+item.name+'" style="color:'+pC+';font-weight:700;font-size:12px">'+(price>0?'$'+price.toFixed(2)+'<span class="pa"></span>':'—')+'</td>'+
+      '<td class="mono col-hide" style="font-size:10px;color:var(--muted)">'+(avg>0&&price>0?'$'+avg.toFixed(2):'—')+'</td>'+
+      '<td>'+(price>0?'<span class="dlt '+dCls+'">'+dIco+' '+dStr+'</span>':'<span style="color:var(--muted);font-size:9px">—</span>')+'</td>'+
+      '<td class="col-hide"><div style="display:flex;align-items:center;gap:5px">'+
+      '<div style="width:38px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+sc+'%;background:'+scC+';border-radius:2px"></div></div>'+
+      '<span class="mono" style="font-size:9px;color:'+scC+'">'+(price>0?sc:'—')+'</span></div></td>'+
+      '<td><div class="vrd-wrap">'+vrdHTML+
+      (price>0?'<a href="'+buyURL+'" target="_blank" class="steam-btn" onclick="event.stopPropagation()">🛒 Buy on Steam</a>':'')+
+      '</div></td>'+
+      '</tr>';
+  });
+  tbody.innerHTML=html;
+}
+
+function updateStats(pool){
+  const vp=pool.filter(d=>d.price>0);
+  document.getElementById('s0').textContent=pool.length;
+  let buy=0,skip=0,watch=0,best=null,bestD=0;
+  vp.forEach(item=>{
+    const avg=wAvg(item,vp);const v=getV(item.price,avg);
+    const d=avg>0?(avg-item.price)/avg:0;
+    if(v==='buy'){buy++;if(d>bestD){bestD=d;best=item;}}
+    else if(v==='skip')skip++;else watch++;
+  });
+  document.getElementById('s1').textContent=buy;
+  document.getElementById('s2').textContent=skip;
+  document.getElementById('s3').textContent=watch;
+  if(best){
+    document.getElementById('s4').textContent=best.name.length>22?best.name.slice(0,20)+'…':best.name;
+    document.getElementById('s4s').textContent='$'+best.price.toFixed(2)+' (−'+(bestD*100).toFixed(0)+'% avg)';
+  }
+}
+
+function checkChanges(fresh){
+  fresh.forEach(item=>{
+    const prev=prevPrices[item.name];
+    if(prev&&item.price>0){
+      const diff=item.price-prev;
+      const pct=Math.abs(diff)/prev;
+      if(pct>.04&&diff<0)showToastMsg(item.e||'📦',item.name,'Price dropped $'+prev.toFixed(2)+' → $'+item.price.toFixed(2));
+      if(pct>.04&&diff>0)showToastMsg(item.e||'📦',item.name,'Price up $'+prev.toFixed(2)+' → $'+item.price.toFixed(2));
+      // Animate price cell
+      if(pct>.001){
+        const el=document.querySelector('[data-pn="'+item.name+'"]');
+        if(el){
+          el.classList.remove('price-up','price-down');
+          void el.offsetWidth;
+          el.classList.add(diff>0?'price-up':'price-down');
+          const arrow=el.querySelector('.pa');
+          if(arrow){arrow.textContent=diff>0?' ↑':' ↓';arrow.style.color=diff>0?'var(--green)':'var(--red)';}
+        }
+      }
+    }
+    if(item.price>0)prevPrices[item.name]=item.price;
+  });
+}
+function showToastMsg(ico,title,body){
+  const c=document.getElementById('tc');const t=document.createElement('div');t.className='tst';
+  t.innerHTML='<div style="font-size:17px">'+ico+'</div><div><strong>'+title+'</strong><span style="color:var(--muted);font-size:10px;display:block">'+body+'</span></div>';
+  c.appendChild(t);setTimeout(()=>t.remove(),5500);
+}
+function setCat(cat,el){filterCat=cat;document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));el.classList.add('on');if(data.length)render(data);}
+function sortBy(col){if(sortCol===col)sortDir*=-1;else{sortCol=col;sortDir=-1;}document.querySelectorAll('th.srt').forEach(th=>{th.classList.remove('sa','sd');if(th.dataset.c===col)th.classList.add(sortDir===-1?'sd':'sa');});if(data.length)render(data);}
+function resetCD(){
+  countdown=90;clearInterval(cdTimer);
+  const arc=document.getElementById('ring-arc');
+  if(arc)arc.style.strokeDashoffset='0';
+  cdTimer=setInterval(()=>{
+    countdown--;
+    document.getElementById('cd').textContent=countdown+'s';
+    if(arc)arc.style.strokeDashoffset=String(44*(1-countdown/90));
+    if(countdown<=0){clearInterval(cdTimer);if(arc)arc.style.strokeDashoffset='0';fetchAll();}
+  },1000);
+}
+function setL(n,p,b){document.getElementById('ln').textContent=n;document.getElementById('lp').textContent=p;setPgf(b);}
+function setPgf(p){document.getElementById('lbf').style.width=p+'%';document.getElementById('pgf').style.width=p+'%';}
+function setApiSt(t){document.getElementById('apiSt').textContent=t;}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+function getDemoData(){
+  return CASES.map(c=>{
+    const demoP={
+      "Fever Case":0.45,"Gallery Case":0.33,"Kilowatt Case":0.29,"Recoil Case":0.18,
+      "Revolution Case":0.18,"Dreams & Nightmares Case":0.62,"Fracture Case":0.28,
+      "Snakebite Case":0.38,"Prisma 2 Case":0.44,"CS20 Case":1.20,"Prisma Case":0.40,
+      "Operation Riptide Case":0.95,"Operation Broken Fang Case":2.60,"Shattered Web Case":3.10,
+      "Operation Hydra Case":3.80,"Operation Wildfire Case":5.20,
+      "Operation Vanguard Weapon Case":8.50,"Operation Breakout Weapon Case":11.80,
+      "Operation Phoenix Weapon Case":9.20,"Operation Bravo Case":17.50,
+      "Danger Zone Case":0.55,"Horizon Case":1.05,"Clutch Case":1.65,
+      "Spectrum 2 Case":0.80,"Spectrum Case":1.30,"Glove Case":3.70,
+      "Gamma 2 Case":1.95,"Gamma Case":2.65,"Chroma 3 Case":2.10,
+      "Chroma 2 Case":3.40,"Chroma Case":4.50,"Revolver Case":0.30,
+      "Shadow Case":1.00,"Falchion Case":2.40,"Huntsman Weapon Case":4.20,
+      "Winter Offensive Weapon Case":6.50,"CS:GO Weapon Case 3":6.90,
+      "CS:GO Weapon Case 2":11.00,"CS:GO Weapon Case":14.50,
+      "eSports 2014 Summer Case":21.50,"eSports 2013 Winter Case":27.00,"eSports 2013 Case":29.50,
+    };
+    const demoV={
+      "Fever Case":310262,"Gallery Case":198000,"Kilowatt Case":750494,"Recoil Case":540723,
+      "Revolution Case":470657,"Dreams & Nightmares Case":409959,"Fracture Case":215287,
+      "Snakebite Case":198430,"Prisma 2 Case":312000,"CS20 Case":88500,"Prisma Case":265000,
+      "Operation Riptide Case":142000,"Operation Broken Fang Case":87000,"Shattered Web Case":62000,
+      "Operation Hydra Case":48000,"Operation Wildfire Case":32000,
+      "Operation Vanguard Weapon Case":18000,"Operation Breakout Weapon Case":12000,
+      "Operation Phoenix Weapon Case":15000,"Operation Bravo Case":8500,
+      "Danger Zone Case":176000,"Horizon Case":88000,"Clutch Case":142000,
+      "Spectrum 2 Case":110000,"Spectrum Case":92000,"Glove Case":65000,
+      "Gamma 2 Case":78000,"Gamma Case":56000,"Chroma 3 Case":72000,
+      "Chroma 2 Case":48000,"Chroma Case":38000,"Revolver Case":195000,
+      "Shadow Case":105000,"Falchion Case":62000,"Huntsman Weapon Case":42000,
+      "Winter Offensive Weapon Case":24000,"CS:GO Weapon Case 3":22000,
+      "CS:GO Weapon Case 2":14000,"CS:GO Weapon Case":9500,
+      "eSports 2014 Summer Case":6200,"eSports 2013 Winter Case":4800,"eSports 2013 Case":3900,
+    };
+    return {...c, price:demoP[c.name]||0, volume:demoV[c.name]||0};
+  });
+}
+
+
+// ════════════════════════════════════════════
+// PORTFOLIO — SKIN SUPPORT
+// ════════════════════════════════════════════
+let pfAddTab = 'case'; // 'case' or 'skin'
+
+function pfSetAddTab(tab) {
+  pfAddTab = tab;
+  const isSkin = tab === 'skin';
+  // Toggle tab styles
+  document.getElementById('add-tab-case').className = 'st-btn' + (isSkin ? '' : ' owned');
+  document.getElementById('add-tab-skin').className = 'st-btn' + (isSkin ? ' owned' : '');
+  // Toggle fields
+  document.getElementById('pf-case-fields').style.display = isSkin ? 'none' : 'contents';
+  document.getElementById('pf-skin-fields').style.display = isSkin ? 'flex' : 'none';
+  // Clear skin search
+  if (isSkin) {
+    document.getElementById('pf-skin-name').value = '';
+    document.getElementById('pf-skin-suggestions').style.display = 'none';
+  }
+}
+
+// Common CS2 skins list for search suggestions
+const CS2_SKINS = [
+  "AK-47 | Asiimov","AK-47 | Bloodsport","AK-47 | Case Hardened","AK-47 | Fire Serpent",
+  "AK-47 | Fuel Injector","AK-47 | Hydroponic","AK-47 | Neon Rider","AK-47 | Nightwish",
+  "AK-47 | Panthera onca","AK-47 | Phantom Disruptor","AK-47 | Redline","AK-47 | The Empress",
+  "AK-47 | Uncharted","AK-47 | Vulcan","AK-47 | Wild Lotus","AK-47 | X-Ray",
+  "AWP | Asiimov","AWP | Chrome Cannon","AWP | Containment Breach","AWP | Dragon Lore",
+  "AWP | Fade","AWP | Gungnir","AWP | Hyper Beast","AWP | Lightning Strike",
+  "AWP | Medusa","AWP | Neo-Noir","AWP | Oni Taiji","AWP | PAW","AWP | Phobos",
+  "AWP | Printstream","AWP | Redline","AWP | Wildfire","AWP | ŻÓŁW",
+  "M4A4 | Asiimov","M4A4 | Desolate Space","M4A4 | Howl","M4A4 | In Living Color",
+  "M4A4 | Neo-Noir","M4A4 | Poseidon","M4A4 | The Emperor","M4A4 | Tooth Fairy",
+  "M4A1-S | Atomic Alloy","M4A1-S | Blue Phosphor","M4A1-S | Botch Job",
+  "M4A1-S | Emphorosaur-S","M4A1-S | Hyper Beast","M4A1-S | Knight","M4A1-S | Master Piece",
+  "M4A1-S | Mecha Industries","M4A1-S | Nightmare","M4A1-S | Printstream",
+  "Desert Eagle | Blaze","Desert Eagle | Cobalt Disruption","Desert Eagle | Conspiracy",
+  "Desert Eagle | Fennec Fox","Desert Eagle | Hand Cannon","Desert Eagle | Hypnotic",
+  "Desert Eagle | Kumicho Dragon","Desert Eagle | Light Rail","Desert Eagle | Midnight Storm",
+  "Desert Eagle | Printstream","Desert Eagle | Sunset Storm 傑","Desert Eagle | The Bronze",
+  "Glock-18 | Bullet Queen","Glock-18 | Fade","Glock-18 | Franklin","Glock-18 | Gamma Doppler",
+  "Glock-18 | Grinder","Glock-18 | Iron Clad","Glock-18 | Nuclear Garden","Glock-18 | Ox",
+  "Glock-18 | Pink DDPAT","Glock-18 | Umbral Rabbit","Glock-18 | Water Elemental",
+  "USP-S | Aubergine","USP-S | Blueprint","USP-S | Caiman","USP-S | Cortex",
+  "USP-S | Cyrex","USP-S | Kill Confirmed","USP-S | Monster Mashup","USP-S | Neo-Noir",
+  "USP-S | Printstream","USP-S | Orion","USP-S | The Traitor",
+  "Knife | Bayonet","Knife | Bowie Knife","Knife | Butterfly Knife","Knife | Classic Knife",
+  "Knife | Falchion Knife","Knife | Flip Knife","Knife | Gut Knife","Knife | Huntsman Knife",
+  "Knife | Karambit","Knife | M9 Bayonet","Knife | Navaja Knife","Knife | Nomad Knife",
+  "Knife | Paracord Knife","Knife | Shadow Daggers","Knife | Skeleton Knife",
+  "Knife | Stiletto Knife","Knife | Survival Knife","Knife | Talon Knife","Knife | Ursus Knife",
+  "Gloves | Bloodhound Gloves","Gloves | Broken Fang Gloves","Gloves | Driver Gloves",
+  "Gloves | Hand Wraps","Gloves | Hydra Gloves","Gloves | Moto Gloves","Gloves | Specialist Gloves",
+  "Gloves | Sport Gloves",
+  "MAC-10 | Neon Rider","MAC-10 | Propaganda","MAC-10 | Stalker",
+  "MP9 | Hydra","MP9 | Starlight Protector",
+  "P250 | See Ya Later","P250 | Asiimov","P250 | Undertow",
+  "Five-SeveN | Angry Mob","Five-SeveN | Fairy Tale","Five-SeveN | Flame Test",
+  "SG 553 | Integrale","SG 553 | Aerial","SG 553 | Dragon Tech",
+  "FAMAS | Afterimage","FAMAS | Commemoration",
+  "Galil AR | Cerberus","Galil AR | Connexion","Galil AR | Chatterbox",
+  "SSG 08 | Blood in the Water","SSG 08 | Sea Calico",
+  "P90 | Asiimov","P90 | Chopper","P90 | Death by Kitty","P90 | Neoqueen",
+  "MP5-SD | Agent","MP5-SD | Acid Wash",
+  "PP-Bizon | Embargo","PP-Bizon | High Roller",
+  "XM1014 | Black Tie","XM1014 | Entombed",
+  "Nova | Hyper Beast","Nova | Koi","Nova | Wood Fired",
+  "MAG-7 | Justice","MAG-7 | Petrog",
+  "Sawed-Off | Analog Input","Sawed-Off | The Kraken",
+  "Negev | Power Loader","Negev | Lionfish",
+  "M249 | Warbird","M249 | Spectre",
+  "Zeus x27 | Olympus"
+];
+
+let skinSearchTimeout = null;
+function pfSkinSearch(val) {
+  clearTimeout(skinSearchTimeout);
+  const box = document.getElementById('pf-skin-suggestions');
+  if (val.length < 2) { box.style.display = 'none'; return; }
+  skinSearchTimeout = setTimeout(function() {
+    const q = val.toLowerCase();
+    const matches = CS2_SKINS.filter(s => s.toLowerCase().includes(q)).slice(0, 8);
+    if (!matches.length) { box.style.display = 'none'; return; }
+    box.innerHTML = '';
+    matches.forEach(function(s) {
+      const div = document.createElement('div');
+      div.textContent = s;
+      div.style.cssText = 'padding:8px 12px;cursor:pointer;font-size:12px;border-bottom:1px solid #1a2535;transition:.15s';
+      div.addEventListener('mouseover', function(){ this.style.background='rgba(0,200,255,.08)'; });
+      div.addEventListener('mouseout',  function(){ this.style.background='transparent'; });
+      div.addEventListener('click',     function(){ pfSkinPick(s); });
+      box.appendChild(div);
+    });
+    box.style.display = 'block';
+  }, 200);
+}
+
+function pfSkinPick(name) {
+  document.getElementById('pf-skin-name').value = name;
+  document.getElementById('pf-skin-suggestions').style.display = 'none';
+}
+
+// Override pfAdd to handle skins
+const _pfAddOriginal = pfAdd;
+function pfAdd() {
+  if (pfAddTab === 'skin') {
+    pfAddSkin();
+  } else {
+    _pfAddOriginal();
+  }
+}
+
+async function pfAddSkin() {
+  const rawName = document.getElementById('pf-skin-name').value.trim();
+  if (!rawName) { alert('Please enter a skin name'); return; }
+  const quality = document.getElementById('pf-skin-quality').value;
+  const stattrak = document.getElementById('pf-skin-stattrak').checked;
+  const souvenir = document.getElementById('pf-skin-souvenir').checked;
+  const qtyRaw = parseInt(document.getElementById('pf-qty').value) || 1;
+  const buyPriceRaw = parseFloat(document.getElementById('pf-buyprice').value);
+
+  // Build Steam market hash name
+  let marketName = rawName;
+  if (stattrak) marketName = 'StatTrak™ ' + marketName;
+  if (souvenir) marketName = 'Souvenir ' + marketName;
+  marketName = marketName + ' (' + quality + ')';
+
+  // Try to fetch current price
+  let currentPrice = 0;
+  try {
+    const d = await proxyFetch('https://steamcommunity.com/market/priceoverview/?appid=730&currency=1&market_hash_name=' + encodeURIComponent(marketName));
+    if (d && d.success) {
+      currentPrice = parseFloat((d.lowest_price||d.median_price||'0').replace(/[^0-9.]/g,''))||0;
+    }
+  } catch(e) {}
+
+  const buyPrice = (!isNaN(buyPriceRaw) && buyPriceRaw > 0) ? buyPriceRaw : currentPrice;
+
+  portfolio.push({
+    id: Date.now(),
+    type: 'skin',
+    name: marketName,
+    displayName: rawName,
+    quality,
+    stattrak,
+    souvenir,
+    e: stattrak ? '🟠' : souvenir ? '🟡' : '🔫',
+    qty: qtyRaw,
+    buyPrice,
+    currentPrice,
+    owned: document.getElementById('pf-owned').checked,
+    sold: document.getElementById('pf-sold').checked,
+    addedAt: new Date().toISOString().slice(0,10)
+  });
+  pfSave();
+  pfRender();
+
+  // Reset
+  document.getElementById('pf-skin-name').value = '';
+  document.getElementById('pf-skin-stattrak').checked = false;
+  document.getElementById('pf-skin-souvenir').checked = false;
+  document.getElementById('pf-qty').value = '1';
+  document.getElementById('pf-buyprice').value = '';
+}
+
+// Fetch skin price from Steam (called during pfRender for skins without live price)
+async function fetchSkinPrice(item) {
+  if (!item.name) return 0;
+  try {
+    const d = await proxyFetch('https://steamcommunity.com/market/priceoverview/?appid=730&currency=1&market_hash_name=' + encodeURIComponent(item.name));
+    if (d && d.success) {
+      const p = parseFloat((d.lowest_price||d.median_price||'0').replace(/[^0-9.]/g,''))||0;
+      // Update cache
+      item.currentPrice = p;
+      priceCache['skin:'+item.name] = p;
+      return p;
+    }
+  } catch(e) {}
+  return priceCache['skin:'+item.name] || 0;
+}
+
+
+// ════════════════════════════════════════════
+// STEAM INVENTORY IMPORT
+// ════════════════════════════════════════════
+
+// CS2 item type detection
+function detectItemType(marketName) {
+  const n = marketName.toLowerCase();
+  if (n.includes('case') || n.includes('capsule') || n.includes('package')) return 'case';
+  if (n.includes('sticker')) return 'sticker';
+  if (n.includes('graffiti') || n.includes('sealed graffiti')) return 'graffiti';
+  if (n.includes('music kit')) return 'musickit';
+  if (n.includes('pin') || n.includes('patch')) return 'collectible';
+  if (n.includes('knife') || n.includes('karambit') || n.includes('bayonet') ||
+      n.includes('butterfly') || n.includes('falchion') || n.includes('flip') ||
+      n.includes('gut knife') || n.includes('bowie') || n.includes('shadow daggers') ||
+      n.includes('talon') || n.includes('stiletto') || n.includes('ursus') ||
+      n.includes('navaja') || n.includes('skeleton') || n.includes('paracord') ||
+      n.includes('survival') || n.includes('nomad') || n.includes('classic knife')) return 'knife';
+  if (n.includes('gloves') || n.includes('hand wraps') || n.includes('wraps')) return 'gloves';
+  if (n.includes('(factory new)') || n.includes('(minimal wear)') ||
+      n.includes('(field-tested)') || n.includes('(well-worn)') ||
+      n.includes('(battle-scarred)')) return 'skin';
+  return 'other';
+}
+
+function getItemEmoji(type, name) {
+  if (type === 'case') return '📦';
+  if (type === 'knife') return '🗡️';
+  if (type === 'gloves') return '🧤';
+  if (type === 'sticker') return '🏷️';
+  if (type === 'skin') {
+    if (name.toLowerCase().includes('stattrak')) return '🟠';
+    if (name.toLowerCase().includes('souvenir')) return '🟡';
+    return '🔫';
+  }
+  return '🎮';
+}
+
+async function resolveSteamId(input) {
+  input = input.trim();
+  // Already a 64-bit Steam ID
+  if (/^7656119\d{10}$/.test(input)) return input;
+  // Extract from URL
+  const vanityMatch = input.match(/steamcommunity\.com\/id\/([^\/\?]+)/);
+  const idMatch = input.match(/steamcommunity\.com\/profiles\/(\d+)/);
+  if (idMatch) return idMatch[1];
+  if (vanityMatch) {
+    // Resolve vanity URL via our worker
+    try {
+      const r = await fetch('https://casepulse.deplumaks.workers.dev/?vanity=' + encodeURIComponent(vanityMatch[1]));
+      const d = await r.json();
+      if (d && d.steamid) return d.steamid;
+    } catch(e) {}
+  }
+  // Maybe they typed just a vanity name
+  if (/^[a-zA-Z0-9_-]+$/.test(input) && input.length > 2) {
+    try {
+      const r = await fetch('https://casepulse.deplumaks.workers.dev/?vanity=' + encodeURIComponent(input));
+      const d = await r.json();
+      if (d && d.steamid) return d.steamid;
+    } catch(e) {}
+  }
+  return null;
+}
+
+async function steamImport() {
+  const input = document.getElementById('steam-import-id').value.trim();
+  if (!input) { alert('Please enter your Steam profile URL or Steam ID'); return; }
+
+  const btn = document.getElementById('import-btn');
+  const prog = document.getElementById('import-progress');
+  const statusEl = document.getElementById('import-status');
+  const countEl = document.getElementById('import-count');
+  const barEl = document.getElementById('import-bar');
+  const resultEl = document.getElementById('import-result');
+  const skipCases = false;
+  const skipDupes = true; // always skip duplicates
+
+  btn.disabled = true; btn.textContent = '⟳ Loading...';
+  prog.style.display = 'block';
+  resultEl.textContent = '';
+  barEl.style.width = '0%';
+
+  // Step 1: Resolve Steam ID
+  statusEl.textContent = '🔍 Resolving Steam profile...';
+  statusEl.style.color = 'var(--accent)';
+  const steamId = await resolveSteamId(input);
+  if (!steamId) {
+    statusEl.textContent = '❌ Could not find Steam profile. Check the URL or ID.';
+    statusEl.style.color = 'var(--red)';
+    btn.disabled = false; btn.textContent = '⚡ IMPORT';
+    return;
+  }
+
+  // Step 2: Fetch inventory
+  statusEl.textContent = '📦 Loading inventory...';
+  barEl.style.width = '10%';
+  let items = [];
+  try {
+    const r = await fetch('https://casepulse.deplumaks.workers.dev/?inventory=' + steamId);
+    const d = await r.json();
+    if (d.error) {
+      statusEl.textContent = '❌ ' + (d.error === 'private' 
+        ? 'Inventory is private. Set it to Public in Steam Privacy Settings.'
+        : d.error);
+      statusEl.style.color = 'var(--red)';
+      btn.disabled = false; btn.textContent = '⚡ IMPORT';
+      return;
+    }
+    items = d.items || [];
+  } catch(e) {
+    statusEl.textContent = '❌ Failed to load inventory. Try again.';
+    statusEl.style.color = 'var(--red)';
+    btn.disabled = false; btn.textContent = '⚡ IMPORT';
+    return;
+  }
+
+  if (!items.length) {
+    statusEl.textContent = '📭 Inventory is empty or no CS2 items found.';
+    btn.disabled = false; btn.textContent = '⚡ IMPORT';
+    return;
+  }
+
+  // Step 3: Filter
+  const existingNames = new Set(portfolio.map(p => p.name));
+  let filtered = items;
+  if (skipCases) filtered = filtered.filter(i => detectItemType(i.market_hash_name) !== 'case');
+  if (skipDupes) filtered = filtered.filter(i => !existingNames.has(i.market_hash_name));
+
+  statusEl.textContent = '💰 Fetching prices for ' + filtered.length + ' items...';
+  barEl.style.width = '20%';
+
+  // Step 4: Add items immediately with $0, then load prices in background
+  let added = 0;
+  const newItems = [];
+
+  filtered.forEach(function(item) {
+    const type = detectItemType(item.market_hash_name);
+    const qty = item.amount || 1;
+    const qualMatch = item.market_hash_name.match(/\((Factory New|Minimal Wear|Field-Tested|Well-Worn|Battle-Scarred)\)/);
+    const quality = qualMatch ? qualMatch[1] : '';
+    const stattrak = item.market_hash_name.includes('StatTrak');
+    const souvenir = item.market_hash_name.includes('Souvenir');
+    newItems.push({
+      id: Date.now() + Math.random(),
+      type: type === 'case' ? 'case' : 'skin',
+      name: item.market_hash_name,
+      displayName: item.market_hash_name.replace(' ('+quality+')','').replace('StatTrak\u2122 ','').replace('Souvenir ',''),
+      quality, stattrak, souvenir,
+      e: getItemEmoji(type, item.market_hash_name),
+      qty,
+      buyPrice: 0,
+      currentPrice: 0,
+      owned: true, sold: false,
+      addedAt: new Date().toISOString().slice(0,10)
+    });
+    added++;
+  });
+
+  // Add to portfolio immediately
+  portfolio = portfolio.concat(newItems);
+  pfSave();
+  pfRender();
+
+  barEl.style.width = '100%';
+  statusEl.textContent = '✅ Added ' + added + ' items! Loading prices...';
+  statusEl.style.color = 'var(--green)';
+  countEl.textContent = '';
+  resultEl.innerHTML = '<span style="color:var(--green)">' + added + ' items added</span> <span style="color:var(--muted)">· fetching prices in background...</span>';
+  btn.disabled = false; btn.textContent = '⚡ IMPORT';
+
+  // Step 5: Load prices in background - batches of 3, every 350ms
+  const itemsToPrice = newItems.filter(function(item) { return item.currentPrice === 0; });
+  let priced = 0;
+  const PBATCH = 3;
+  for (let i = 0; i < itemsToPrice.length; i += PBATCH) {
+    const batch = itemsToPrice.slice(i, i + PBATCH);
+    await Promise.all(batch.map(async function(item) {
+      try {
+        const d = await proxyFetch('https://steamcommunity.com/market/priceoverview/?appid=730&currency=1&market_hash_name=' + encodeURIComponent(item.name));
+        if (d && d.success) {
+          const price = parseFloat((d.lowest_price||d.median_price||'0').replace(/[^0-9.]/g,''))||0;
+          const pfItem = portfolio.find(function(p) { return p.id === item.id; });
+          if (pfItem) { pfItem.currentPrice = price; pfItem.buyPrice = pfItem.buyPrice || price; }
+          priced++;
+        }
+      } catch(e) {}
+    }));
+    pfSave();
+    pfRender();
+    resultEl.innerHTML = '<span style="color:var(--green)">' + added + ' items</span> <span style="color:var(--muted)">· pricing ' + priced + '/' + itemsToPrice.length + '...</span>';
+    if (i + PBATCH < itemsToPrice.length) await sleep(350);
+  }
+  pfSave();
+  pfRender();
+  resultEl.innerHTML = '<span style="color:var(--green)">✅ Done! ' + added + ' items, ' + priced + ' prices loaded</span>';
+}
+
+
+async function pfRefreshPrices() {
+  const btn = document.getElementById('refresh-prices-btn');
+  if (!btn) return;
+  btn.textContent = '⟳ Loading...';
+  btn.disabled = true;
+
+  const itemsToPrice = portfolio.filter(function(p) { return p.name; });
+  let done = 0;
+  const PBATCH = 3;
+  for (let i = 0; i < itemsToPrice.length; i += PBATCH) {
+    const batch = itemsToPrice.slice(i, i + PBATCH);
+    await Promise.all(batch.map(async function(item) {
+      try {
+        const d = await proxyFetch('https://steamcommunity.com/market/priceoverview/?appid=730&currency=1&market_hash_name=' + encodeURIComponent(item.name));
+        if (d && d.success) {
+          const price = parseFloat((d.lowest_price||d.median_price||'0').replace(/[^0-9.]/g,''))||0;
+          const pfItem = portfolio.find(function(p){ return p.id === item.id; });
+          if (pfItem && price > 0) pfItem.currentPrice = price;
+          done++;
+        }
+      } catch(e) {}
+    }));
+    btn.textContent = '⟳ ' + done + '/' + itemsToPrice.length;
+    pfRender();
+    if (i + PBATCH < itemsToPrice.length) await sleep(350);
+  }
+  pfSave();
+  pfRender();
+  btn.textContent = '✅ Done!';
+  btn.disabled = false;
+  setTimeout(function(){ btn.textContent = '🔄 Refresh Prices'; }, 2000);
+}
+
+
+// ════════════════════════════════════════════
+// PORTFOLIO VALUE CHART
+// ════════════════════════════════════════════
+let pfChartInstance = null;
+const pfValueHistory = []; // { time, value, invested }
+
+function recordPfSnapshot() {
+  if (!portfolio.length) return;
+  const now = Date.now();
+  let totalValue = 0, totalInvested = 0;
+  portfolio.forEach(function(item) {
+    const cur = item.type === 'skin'
+      ? (item.currentPrice || 0)
+      : (data.find(function(d){ return d.name===item.name; }) || {price:0}).price;
+    const qty = item.qty || 1;
+    totalValue += cur * qty;
+    totalInvested += (item.buyPrice || 0) * qty;
+  });
+  // Keep last 48 snapshots (~72 min at 90sec intervals)
+  pfValueHistory.push({ time: now, value: totalValue, invested: totalInvested });
+  if (pfValueHistory.length > 48) pfValueHistory.shift();
+}
+
+function openPfChart() {
+  recordPfSnapshot();
+  const modal = document.getElementById('pfChartModal');
+  modal.style.display = 'block';
+  renderPfChart();
+}
+
+function closePfChart() {
+  document.getElementById('pfChartModal').style.display = 'none';
+}
+
+function renderPfChart() {
+  const canvas = document.getElementById('pfChartCanvas');
+  if (!canvas) return;
+
+  // Current stats
+  let totalValue = 0, totalInvested = 0;
+  portfolio.forEach(function(item) {
+    const cur = item.type === 'skin'
+      ? (item.currentPrice || 0)
+      : (data.find(function(d){ return d.name===item.name; }) || {price:0}).price;
+    const qty = item.qty || 1;
+    totalValue += cur * qty;
+    totalInvested += (item.buyPrice || 0) * qty;
+  });
+
+  const pnl = totalValue - totalInvested;
+  const pnlEl = document.getElementById('pfChart-pnl');
+  document.getElementById('pfChart-value').textContent = '$' + totalValue.toFixed(2);
+  document.getElementById('pfChart-invested').textContent = '$' + totalInvested.toFixed(2);
+  pnlEl.textContent = (pnl >= 0 ? '+' : '') + '$' + pnl.toFixed(2);
+  pnlEl.style.color = pnl >= 0 ? 'var(--green)' : 'var(--red)';
+
+  if (pfChartInstance) { pfChartInstance.destroy(); pfChartInstance = null; }
+
+  const history = pfValueHistory.length > 1 ? pfValueHistory : [
+    { time: Date.now() - 90000, value: totalValue, invested: totalInvested },
+    { time: Date.now(), value: totalValue, invested: totalInvested }
+  ];
+
+  const labels = history.map(function(h) {
+    const d = new Date(h.time);
+    return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+  });
+
+  pfChartInstance = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Value',
+          data: history.map(function(h){ return h.value; }),
+          borderColor: '#00c8ff',
+          backgroundColor: 'rgba(0,200,255,0.08)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: '#00c8ff',
+          fill: true,
+          tension: 0.3
+        },
+        {
+          label: 'Invested',
+          data: history.map(function(h){ return h.invested; }),
+          borderColor: 'rgba(74,96,128,0.6)',
+          borderWidth: 1,
+          borderDash: [4,4],
+          pointRadius: 0,
+          fill: false,
+          tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: '#8899aa', font: { size: 10 } } },
+        tooltip: {
+          callbacks: {
+            label: function(ctx) { return ctx.dataset.label + ': $' + ctx.parsed.y.toFixed(2); }
+          }
+        }
+      },
+      scales: {
+        x: { ticks: { color: '#4a6080', font: { size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#4a6080', font: { size: 9 }, callback: function(v){ return '$'+v.toFixed(0); } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
+
+// Record snapshot every time prices refresh
+const _origCheckChanges = checkChanges;
+function checkChanges(d) {
+  _origCheckChanges(d);
+  recordPfSnapshot();
+}
+
+// ════════════════════════════════════════════
+// PAGE NAVIGATION
+// ════════════════════════════════════════════
+function showPage(page){
+  document.getElementById('page-market').style.display    = page==='market'    ? '' : 'none';
+  document.getElementById('page-portfolio').style.display = page==='portfolio' ? '' : 'none';
+  document.getElementById('nav-market').classList.toggle('active',    page==='market');
+  document.getElementById('nav-portfolio').classList.toggle('active', page==='portfolio');
+  if(page==='portfolio'){pfPopulateSelect();pfRender();}
+}
+
+// ════════════════════════════════════════════
+// MY PORTFOLIO
+// ════════════════════════════════════════════
+let portfolio=JSON.parse(localStorage.getItem('cp_portfolio')||'[]');
+
+function pfSave(){localStorage.setItem('cp_portfolio',JSON.stringify(portfolio));}
+
+function pfPopulateSelect(){
+  const sel=document.getElementById('pf-select');
+  if(sel.options.length>1)return;
+  CASES.forEach(c=>{
+    const opt=document.createElement('option');
+    opt.value=c.name;opt.textContent=c.e+' '+c.name;
+    sel.appendChild(opt);
+  });
+}
+
+function pfAdd(){
+  const name=document.getElementById('pf-select').value;
+  if(!name){alert('Please select a case');return;}
+  const qty=parseInt(document.getElementById('pf-qty').value)||1;
+  const raw=parseFloat(document.getElementById('pf-buyprice').value);
+  const liveItem=data.find(d=>d.name===name);
+  const buyPrice=(!isNaN(raw)&&raw>0)?raw:(liveItem?.price||0);
+  const caseItem=CASES.find(c=>c.name===name);
+  portfolio.push({id:Date.now(),name,e:caseItem?.e||'📦',qty,buyPrice,
+    owned:document.getElementById('pf-owned').checked,
+    sold:document.getElementById('pf-sold').checked,
+    addedAt:new Date().toISOString().slice(0,10)});
+  pfSave();pfRender();
+  document.getElementById('pf-select').value='';
+  document.getElementById('pf-qty').value='1';
+  document.getElementById('pf-buyprice').value='';
+  document.getElementById('pf-owned').checked=false;
+  document.getElementById('pf-sold').checked=false;
+}
+
+function pfRemove(id){portfolio=portfolio.filter(p=>p.id!==id);pfSave();pfRender();}
+
+function pfToggle(id,field){
+  const item=portfolio.find(p=>p.id===id);
+  if(item){item[field]=!item[field];pfSave();pfRender();}
+}
+
+function pfQty(id,delta){
+  const item=portfolio.find(p=>p.id===id);
+  if(item){item.qty=Math.max(1,item.qty+delta);pfSave();pfRender();}
+}
+
+function pfClear(){if(!portfolio.length)return;if(confirm('Clear entire portfolio?')){portfolio=[];pfSave();pfRender();}}
+
+function pfRender(){
+  const tbody=document.getElementById('pf-tbody');
+  if(!tbody)return;
+  if(!portfolio.length){
+    tbody.innerHTML='<tr><td colspan="9" class="empty"><div>\u{1F4EB}</div>No cases yet \u2014 add some above</td></tr>';
+    pfSummary(0,0,0);return;
+  }
+  const vp=data.filter(d=>d.price>0);
+  let totInv=0,totVal=0,totUnits=0;
+  const rows=[];
+  portfolio.forEach(function(item){
+    const live = item.type==='skin'
+      ? null
+      : data.find(function(d){return d.name===item.name;});
+    const cur = item.type==='skin'
+      ? (item.currentPrice || priceCache['skin:'+item.name] || 0)
+      : (live ? live.price : 0);
+    const inv=item.buyPrice*item.qty;
+    const val=cur*item.qty;
+    const pnl=val-inv;
+    const pnlPct=inv>0?(pnl/inv*100):0;
+    const pC=pnl>0.005?'var(--green)':pnl<-0.005?'var(--red)':'var(--muted)';
+    if(!item.sold){totInv+=inv;totVal+=val;}
+    totUnits+=item.qty;
+    let verdict='';
+    if(item.type!=='skin'&&live&&live.price){
+      const avg=wAvg(live,vp);const v=getV(live.price,avg);
+      verdict=v==='buy'?'<span class="bdg" style="background:rgba(0,255,136,.1);color:var(--green)">\u2705 BUY</span>':
+              v==='skip'?'<span class="bdg" style="background:rgba(255,59,92,.1);color:var(--red)">\u274C SKIP</span>':
+              '<span class="bdg" style="background:rgba(255,215,0,.08);color:var(--yellow)">\u{1F441} WATCH</span>';
+    }
+    const qualityBadge = item.type==='skin'
+      ? '<span class="bdg" style="background:rgba(0,200,255,.08);color:var(--muted);margin-right:2px">'
+        + (item.stattrak?'ST™ ':'') + (item.souvenir?'SV ':'')
+        + (item.quality||'').replace('Factory New','FN').replace('Minimal Wear','MW')
+          .replace('Field-Tested','FT').replace('Well-Worn','WW').replace('Battle-Scarred','BS')
+        + '</span>'
+      : '';
+    const statusBadge=item.sold
+      ?'<span class="bdg" style="background:rgba(255,59,92,.12);color:var(--red)">SOLD</span>'
+      :item.owned
+        ?'<span class="bdg" style="background:rgba(0,255,136,.12);color:var(--green)">OWNED</span>'
+        :'<span class="bdg" style="background:rgba(255,215,0,.08);color:var(--yellow)">WATCHING</span>';
+
+    const tr=document.createElement('tr');
+    tr.style.opacity=item.sold?'0.5':'1';
+    tr.innerHTML=
+      '<td><div class="nc"><div class="ci">'+item.e+'</div><div>'
+      +'<div class="cn">'+item.name+'</div>'
+      +'<div class="cm" style="margin-top:2px">'+qualityBadge+statusBadge+' '+verdict+'</div>'
+      +'</div></div></td>'
+      +'<td><div style="display:flex;align-items:center;gap:4px">'
+      +'<button class="qty-btn" data-id="'+item.id+'" data-d="-1">\u2212</button>'
+      +'<span class="mono" style="font-size:12px;min-width:20px;text-align:center">'+item.qty+'</span>'
+      +'<button class="qty-btn" data-id="'+item.id+'" data-d="1">+</button>'
+      +'</div></td>'
+      +'<td class="mono" style="font-size:11px;color:var(--muted)">$'+item.buyPrice.toFixed(2)+'</td>'
+      +'<td class="mono" style="font-size:11px">'+(cur>0?'$'+cur.toFixed(2):'\u2014')+'</td>'
+      +'<td class="mono col-hide" style="font-size:11px">$'+inv.toFixed(2)+'</td>'
+      +'<td class="mono col-hide" style="font-size:11px;color:'+(cur>0?'var(--text)':'var(--muted)')+'">'+( cur>0?'$'+val.toFixed(2):'\u2014')+'</td>'
+      +'<td><span class="mono" style="font-size:11px;font-weight:700;color:'+pC+'">'+(cur>0?(pnl>=0?'+':'')+' $'+pnl.toFixed(2):'\u2014')+'</span>'
+      +(cur>0?'<span class="mono" style="display:block;font-size:9px;color:'+pC+'">'+(pnlPct>=0?'+':'')+pnlPct.toFixed(1)+'%</span>':'')+'</td>'
+      +'<td style="white-space:nowrap">'
+      +'<button class="st-btn '+(item.owned?'owned':'')+'" data-id="'+item.id+'" data-f="owned">own</button> '
+      +'<button class="st-btn '+(item.sold?'sold':'')+'" data-id="'+item.id+'" data-f="sold">sold</button>'
+      +'</td>'
+      +'<td><button class="rm-btn" data-id="'+item.id+'" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 5px">\u2715</button></td>';
+    rows.push(tr);
+  });
+  tbody.innerHTML='';
+  rows.forEach(function(r){tbody.appendChild(r);});
+  // Attach events via data attributes (avoids inline quote issues)
+  tbody.querySelectorAll('.qty-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){pfQty(parseInt(btn.dataset.id),parseInt(btn.dataset.d));});
+  });
+  tbody.querySelectorAll('.st-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){pfToggle(parseInt(btn.dataset.id),btn.dataset.f);});
+  });
+  tbody.querySelectorAll('.rm-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){pfRemove(parseInt(btn.dataset.id));});
+  });
+  pfSummary(totInv,totVal,totUnits);
+}
+
+function pfSummary(inv,val,units){
+  const pnl=val-inv;
+  const pct=inv>0?(pnl/inv*100):0;
+  const c=pnl>0.005?'var(--green)':pnl<-0.005?'var(--red)':'var(--text)';
+  document.getElementById('pf-invested').textContent='$'+inv.toFixed(2);
+  document.getElementById('pf-value').textContent='$'+val.toFixed(2);
+  document.getElementById('pf-pnl').textContent=(pnl>=0?'+':'')+' $'+pnl.toFixed(2);
+  document.getElementById('pf-pnl').style.color=c;
+  document.getElementById('pf-pnl-pct').textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
+  document.getElementById('pf-pnl-pct').style.color=c;
+  const skinCount = portfolio.filter(function(p){return p.type==='skin';}).length;
+  const caseCount = portfolio.filter(function(p){return p.type!=='skin';}).length;
+  document.getElementById('pf-count').textContent=portfolio.length;
+  document.getElementById('pf-units').textContent=
+    (caseCount>0?caseCount+' cases':'') +
+    (caseCount>0&&skinCount>0?' · ':'') +
+    (skinCount>0?skinCount+' skins':'') +
+    (caseCount===0&&skinCount===0?'0 items':'');
+}
+
+// ── CHART STATE ──
+let chartInstance = null;
+let chartRawData = [];
+let currentChartName = '';
+
+function openChart(caseName) {
+  const item = data.find(d => d.name === caseName);
+  if (!item) return;
+  currentChartName = caseName;
+
+  const modal = document.getElementById('chartModal');
+  modal.style.display = 'block';
+  document.getElementById('cmEmoji').textContent = item.e || '📦';
+  document.getElementById('cmTitle').textContent = caseName;
+  document.getElementById('cmBuyBtn').href = 'https://steamcommunity.com/market/listings/730/' + encodeURIComponent(caseName);
+
+  // Stats row
+  const validPool = data.filter(d => d.price > 0);
+  const avg = item.price > 0 ? wAvg(item, validPool) : 0;
+  const v = item.price > 0 ? getV(item.price, avg) : 'watch';
+  const vColor = v==='buy'?'#00ff88':v==='skip'?'#ff3b5c':'#ffd700';
+  const vLabel = v==='buy'?'✅ BUY':v==='skip'?'❌ SKIP':'👁 WATCH';
+  const delta = avg > 0 && item.price > 0 ? ((item.price - avg)/avg*100).toFixed(1) : '—';
+  document.getElementById('cmStats').innerHTML = `
+    <div style="padding:12px 16px;border-right:1px solid #1a2535">
+      <div style="font-size:8px;color:#4a6080;font-family:'Share Tech Mono',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Current Price</div>
+      <div style="font-size:20px;font-weight:700;color:#fff;font-family:'Share Tech Mono',monospace">${item.price > 0 ? '$'+item.price.toFixed(2) : '—'}</div>
+    </div>
+    <div style="padding:12px 16px;border-right:1px solid #1a2535">
+      <div style="font-size:8px;color:#4a6080;font-family:'Share Tech Mono',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Avg (similar vol)</div>
+      <div style="font-size:20px;font-weight:700;color:#4a6080;font-family:'Share Tech Mono',monospace">${avg > 0 ? '$'+avg.toFixed(2) : '—'}</div>
+    </div>
+    <div style="padding:12px 16px;border-right:1px solid #1a2535">
+      <div style="font-size:8px;color:#4a6080;font-family:'Share Tech Mono',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Delta</div>
+      <div style="font-size:20px;font-weight:700;font-family:'Share Tech Mono',monospace;color:${delta < 0 ? '#00ff88' : delta > 0 ? '#ff3b5c' : '#ffd700'}">${delta !== '—' ? (delta > 0 ? '+' : '') + delta + '%' : '—'}</div>
+    </div>
+    <div style="padding:12px 16px">
+      <div style="font-size:8px;color:#4a6080;font-family:'Share Tech Mono',monospace;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px">Verdict</div>
+      <div style="font-size:16px;font-weight:700;color:${vColor}">${vLabel}</div>
+    </div>
+  `;
+
+  document.getElementById('cmSub').textContent = 'Released: ' + item.released + ' · Volume: ' + (item.volume > 0 ? item.volume.toLocaleString('en') : '—');
+
+  // Reset chart
+  document.getElementById('cmLoading').style.display = 'flex';
+  document.getElementById('priceChart').style.display = 'none';
+  document.getElementById('cmInsight').style.display = 'none';
+  chartRawData = [];
+
+  // Set active range tab to 30D default
+  document.querySelectorAll('.rtab').forEach(t => t.classList.remove('on'));
+  document.querySelectorAll('.rtab')[1].classList.add('on'); // 30D
+
+  fetchPriceHistory(caseName, 30);
+}
+
+async function fetchPriceHistory(caseName, days) {
+  try {
+    const url = `https://steamcommunity.com/market/pricehistory/?appid=730&market_hash_name=${encodeURIComponent(caseName)}`;
+    const raw = await proxyFetch(url);
+
+    if (!raw || !raw.prices || !raw.prices.length) {
+      showChartError('No price history available');
+      return;
+    }
+
+    // Steam format: [["Oct 01 2023 01: +0", price, volume], ...]
+    chartRawData = raw.prices.map(p => ({
+      date: new Date(p[0].slice(0, 12).trim()),
+      price: parseFloat(p[1]),
+      volume: parseInt(p[2]) || 0
+    })).filter(p => !isNaN(p.price) && p.date instanceof Date && !isNaN(p.date));
+
+    drawChart(days);
+  } catch(e) {
+    showChartError('Failed to load: ' + e.message);
+  }
+}
+
+function setRange(days, el) {
+  document.querySelectorAll('.rtab').forEach(t => t.classList.remove('on'));
+  el.classList.add('on');
+  if (chartRawData.length) drawChart(days);
+  else if (currentChartName) fetchPriceHistory(currentChartName, days);
+}
+
+function drawChart(days) {
+  let pts = chartRawData;
+  if (days > 0) {
+    const cutoff = new Date(Date.now() - days * 86400000);
+    pts = chartRawData.filter(p => p.date >= cutoff);
+  }
+  if (!pts.length) { showChartError('No data for this range'); return; }
+
+  // Daily aggregate (avg price per day)
+  const byDay = {};
+  pts.forEach(p => {
+    const k = p.date.toISOString().slice(0,10);
+    if (!byDay[k]) byDay[k] = {sum:0, cnt:0, vol:0};
+    byDay[k].sum += p.price;
+    byDay[k].cnt++;
+    byDay[k].vol += p.volume;
+  });
+  const labels = Object.keys(byDay).sort();
+  const prices = labels.map(k => +(byDay[k].sum/byDay[k].cnt).toFixed(4));
+  const volumes = labels.map(k => byDay[k].vol);
+
+  // Stats for insight
+  const minP = Math.min(...prices), maxP = Math.max(...prices);
+  const first = prices[0], last = prices[prices.length-1];
+  const change = ((last - first)/first*100).toFixed(1);
+  const avg7 = prices.slice(-7).reduce((a,b)=>a+b,0)/Math.min(7,prices.length);
+  const trend = last > avg7 * 1.02 ? 'rising' : last < avg7 * 0.98 ? 'falling' : 'stable';
+  const trendColor = trend==='rising'?'#ff3b5c':trend==='falling'?'#00ff88':'#ffd700';
+  const trendIco = trend==='rising'?'📈':trend==='falling'?'📉':'➡️';
+
+  // Gradient color line: green if going down (cheap), red if going up
+  const lineColor = parseFloat(change) <= 0 ? '#00ff88' : '#ff3b5c';
+  const fillColor = parseFloat(change) <= 0 ? 'rgba(0,255,136,0.08)' : 'rgba(255,59,92,0.08)';
+
+  // Build insight text
+  const insightEl = document.getElementById('cmInsight');
+  insightEl.style.display = 'block';
+  const rec = last <= minP * 1.1 ? '🟢 Price is near its historic low — <strong>good time to buy.</strong>'
+    : last >= maxP * 0.9 ? '🔴 Price is near its historic high — consider waiting.'
+    : `${trendIco} Trend is <span style="color:${trendColor}">${trend}</span>. ${parseFloat(change) <= -5 ? 'Recent drop could be a buying opportunity.' : parseFloat(change) >= 5 ? 'Recent rise — watch for pullback.' : 'Price is within normal range.'}`;
+  insightEl.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
+      <div><span style="color:#4a6080;font-size:9px;font-family:'Share Tech Mono',monospace">PERIOD LOW</span><br><span style="color:#00ff88;font-weight:700">$${minP.toFixed(2)}</span></div>
+      <div><span style="color:#4a6080;font-size:9px;font-family:'Share Tech Mono',monospace">PERIOD HIGH</span><br><span style="color:#ff3b5c;font-weight:700">$${maxP.toFixed(2)}</span></div>
+      <div><span style="color:#4a6080;font-size:9px;font-family:'Share Tech Mono',monospace">CHANGE</span><br><span style="color:${parseFloat(change)<=0?'#00ff88':'#ff3b5c'};font-weight:700">${change > 0 ? '+' : ''}${change}%</span></div>
+    </div>
+    <div style="color:#c8d8e8">${rec}</div>
+  `;
+
+  // Draw
+  document.getElementById('cmLoading').style.display = 'none';
+  const canvas = document.getElementById('priceChart');
+  canvas.style.display = 'block';
+
+  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+  const ctx = canvas.getContext('2d');
+  chartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Price ($)',
+        data: prices,
+        borderColor: lineColor,
+        backgroundColor: fillColor,
+        borderWidth: 2,
+        pointRadius: labels.length > 60 ? 0 : 2,
+        pointHoverRadius: 5,
+        fill: true,
+        tension: 0.3,
+        yAxisID: 'y'
+      }, {
+        label: 'Volume',
+        data: volumes,
+        borderColor: 'rgba(100,120,180,0.5)',
+        backgroundColor: 'rgba(100,120,180,0.15)',
+        borderWidth: 1,
+        pointRadius: 0,
+        fill: true,
+        tension: 0.3,
+        yAxisID: 'y2'
+      }]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0d1420',
+          borderColor: '#1a2535',
+          borderWidth: 1,
+          titleColor: '#c8d8e8',
+          bodyColor: '#c8d8e8',
+          callbacks: {
+            label: ctx => ctx.datasetIndex === 0 ? ' $' + ctx.raw.toFixed(4) : ' Vol: ' + ctx.raw.toLocaleString('en')
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(26,37,53,0.8)' },
+          ticks: { color: '#4a6080', font: { family: "'Share Tech Mono', monospace", size: 9 }, maxTicksLimit: 8, maxRotation: 0 }
+        },
+        y: {
+          position: 'left',
+          grid: { color: 'rgba(26,37,53,0.8)' },
+          ticks: { color: '#4a6080', font: { family: "'Share Tech Mono', monospace", size: 9 }, callback: v => '$' + v.toFixed(2) }
+        },
+        y2: {
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { color: 'rgba(100,120,180,0.5)', font: { size: 8 }, callback: v => v > 999 ? (v/1000).toFixed(0)+'k' : v }
+        }
+      }
+    }
+  });
+}
+
+function showChartError(msg) {
+  document.getElementById('cmLoading').innerHTML = `<div style="color:#ff3b5c;font-family:'Share Tech Mono',monospace;font-size:10px;text-align:center">${msg}<br><span style="color:#4a6080;font-size:9px;margin-top:4px;display:block">Steam API requires login for full history.<br>Try opening via Claude in Chrome.</span></div>`;
+}
+
+function closeChartModal(e) {
+  if (e.target === document.getElementById('chartModal')) {
+    document.getElementById('chartModal').style.display = 'none';
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+  }
+}
+
+
+// ════════════════════════════════════════════
+// FIREBASE — loaded via CDN compat v9
+// ════════════════════════════════════════════
+const FB_CONFIG = {
+  apiKey:            "AIzaSyDWpkvKd8U5rih3YK7vVMmsQBIjslhTo5s",
+  authDomain:        "casepulse-40229.firebaseapp.com",
+  projectId:         "casepulse-40229",
+  storageBucket:     "casepulse-40229.firebasestorage.app",
+  messagingSenderId: "341334727568",
+  appId:             "1:341334727568:web:7e2cca100477c4fb84b115",
+  measurementId:     "G-G7GNLSMX38"
+};
+
+let db = null, auth = null, currentUser = null;
+const FB_READY = true;
+
+function initFirebase() {
+  if (typeof firebase === 'undefined') {
+    console.warn('Firebase SDK not loaded yet, retrying...');
+    setTimeout(initFirebase, 200);
+    return;
+  }
+  if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+  auth = firebase.auth();
+  db   = firebase.firestore();
+
+  auth.onAuthStateChanged(function(user) {
+    currentUser = user;
+    updateUserUI(user);
+    if (user) {
+      document.getElementById('authModal').style.display = 'none';
+      loadPortfolioFromDB();
+    }
+  });
+}
+
+// ── Auth UI ──
+function authTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tab-login').style.background    = isLogin ? 'rgba(0,200,255,.12)' : 'transparent';
+  document.getElementById('tab-login').style.color         = isLogin ? '#00c8ff' : '#4a6080';
+  document.getElementById('tab-login').style.borderColor   = isLogin ? '#00c8ff' : '#1a2535';
+  document.getElementById('tab-register').style.background = !isLogin ? 'rgba(0,200,255,.12)' : 'transparent';
+  document.getElementById('tab-register').style.color      = !isLogin ? '#00c8ff' : '#4a6080';
+  document.getElementById('tab-register').style.borderColor= !isLogin ? '#00c8ff' : '#1a2535';
+  document.getElementById('auth-btn').textContent = isLogin ? 'SIGN IN' : 'CREATE ACCOUNT';
+  document.getElementById('auth-err').textContent = '';
+  document.getElementById('auth-btn').dataset.tab = tab;
+}
+
+function authSubmit() {
+  if (!FB_READY) { authSkip(); return; }
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  const tab   = document.getElementById('auth-btn').dataset.tab || 'login';
+  const errEl = document.getElementById('auth-err');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Please fill in all fields'; return; }
+  const btn = document.getElementById('auth-btn');
+  btn.textContent = '...'; btn.disabled = true;
+  const promise = tab === 'login'
+    ? auth.signInWithEmailAndPassword(email, pass)
+    : auth.createUserWithEmailAndPassword(email, pass);
+  promise.catch(function(e) {
+    errEl.textContent = e.message.replace('Firebase: ','').replace(/\(auth.*\)/,'').trim();
+    btn.textContent = tab === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT';
+    btn.disabled = false;
+  });
+}
+
+function authGoogle() {
+  if (!FB_READY) { authSkip(); return; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(function(e) {
+    document.getElementById('auth-err').textContent = e.message;
+  });
+}
+
+function authSkip() {
+  document.getElementById('authModal').style.display = 'none';
+}
+
+function authSignOut() {
+  if (auth) auth.signOut();
+  currentUser = null;
+  updateUserUI(null);
+}
+
+function updateUserUI(user) {
+  let pill = document.getElementById('user-pill');
+  if (!pill) {
+    pill = document.createElement('div');
+    pill.id = 'user-pill';
+    pill.style.cssText = 'display:flex;align-items:center;gap:7px;flex-shrink:0';
+    document.querySelector('.hdr-r').prepend(pill);
+  }
+  if (user) {
+    const name = user.displayName || user.email.split('@')[0];
+    pill.innerHTML =
+      '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#4a6080;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+name+'</div>' +
+      '<button onclick="authSignOut()" style="background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.25);color:#ff3b5c;padding:2px 8px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;cursor:pointer">OUT</button>';
+  } else {
+    pill.innerHTML =
+      '<button class="show-auth-btn" style="background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.25);color:#00c8ff;padding:3px 10px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;cursor:pointer">SIGN IN</button>';
+  }
+}
+
+// click handler for dynamically created sign-in button
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('show-auth-btn')) {
+    document.getElementById('authModal').style.display = 'flex';
+  }
+});
+
+// ── Firestore sync ──
+async function loadPortfolioFromDB() {
+  if (!db || !currentUser) return;
+  try {
+    const doc = await db.collection('portfolios').doc(currentUser.uid).get();
+    if (doc.exists && doc.data().items) {
+      portfolio = doc.data().items;
+      pfSave(); // mirror to localStorage as backup
+      const pfPage = document.getElementById('page-portfolio');
+      if (pfPage && pfPage.style.display !== 'none') pfRender();
+      showToastMsg('☁️','Portfolio loaded','Synced from cloud');
+    }
+  } catch(e) { console.warn('Firestore load error:', e); }
+}
+
+async function savePortfolioToDB() {
+  if (!db || !currentUser) return;
+  try {
+    await db.collection('portfolios').doc(currentUser.uid).set({ items: portfolio, updatedAt: new Date().toISOString() });
+  } catch(e) { console.warn('Firestore save error:', e); }
+}
+
+// Override pfSave to also sync to Firestore
+const _pfSaveLocal = pfSave;
+function pfSave() {
+  localStorage.setItem('cp_portfolio', JSON.stringify(portfolio));
+  savePortfolioToDB();
+}
+
+
+window.addEventListener('load',()=>{
+  document.querySelector('[data-c="qty"]').classList.add('sd');
+  authTab('login');
+  document.getElementById('auth-btn').dataset.tab = 'login';
+  document.getElementById('authModal').style.display = 'flex';
+  initFirebase();
+  init();
+});
+</script>
+
+
+<!-- PORTFOLIO CHART MODAL -->
+<div class="modal-bg" id="pfChartModal" onclick="if(event.target===this)closePfChart()">
+  <div class="modal-box" style="max-width:700px">
+    <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)" id="pfChartTitle">Portfolio Value</div>
+        <div style="font-size:10px;color:var(--muted);font-family:'Share Tech Mono',monospace;margin-top:2px">LIVE PRICE TRACKING</div>
+      </div>
+      <button onclick="closePfChart()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:4px 8px">✕</button>
+    </div>
+    <div style="padding:16px 20px">
+      <div class="cm-stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+        <div style="padding:12px 16px;border-right:1px solid var(--border)">
+          <div style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px">TOTAL VALUE</div>
+          <div style="font-size:20px;font-weight:700;color:var(--text);margin-top:4px" id="pfChart-value">$0.00</div>
+        </div>
+        <div style="padding:12px 16px;border-right:1px solid var(--border)">
+          <div style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px">INVESTED</div>
+          <div style="font-size:20px;font-weight:700;color:var(--text);margin-top:4px" id="pfChart-invested">$0.00</div>
+        </div>
+        <div style="padding:12px 16px">
+          <div style="font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;letter-spacing:1px">P&L</div>
+          <div style="font-size:20px;font-weight:700;margin-top:4px" id="pfChart-pnl">+$0.00</div>
+        </div>
+      </div>
+      <div style="position:relative;height:220px">
+        <canvas id="pfChartCanvas"></canvas>
+      </div>
+      <div style="margin-top:10px;font-size:9px;color:var(--muted);font-family:'Share Tech Mono',monospace;text-align:center">
+        Updates every 90 seconds with live Steam prices
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div id="authModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:1000;backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:16px">
+  <div style="background:#0d1420;border:1px solid #1a2535;border-radius:13px;width:100%;max-width:400px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.8)">
+    <div style="padding:20px 22px;border-bottom:1px solid #1a2535;display:flex;align-items:center;gap:10px">
+      <div style="font-size:22px">📦</div>
+      <div>
+        <div style="font-size:16px;font-weight:700;color:#fff;letter-spacing:1px">CASEPULSE</div>
+        <div style="font-size:9px;color:#4a6080;font-family:'Share Tech Mono',monospace;letter-spacing:2px">SIGN IN TO SYNC PORTFOLIO</div>
+      </div>
+    </div>
+    <div style="padding:22px">
+      <!-- Tabs -->
+      <div style="display:flex;gap:3px;margin-bottom:18px">
+        <button id="tab-login" onclick="authTab('login')" style="flex:1;padding:7px;border-radius:5px;border:1px solid #00c8ff;background:rgba(0,200,255,.12);color:#00c8ff;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer">SIGN IN</button>
+        <button id="tab-register" onclick="authTab('register')" style="flex:1;padding:7px;border-radius:5px;border:1px solid #1a2535;background:transparent;color:#4a6080;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1px;cursor:pointer">REGISTER</button>
+      </div>
+      <!-- Email -->
+      <div style="margin-bottom:12px">
+        <div style="font-size:9px;color:#4a6080;font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:5px">EMAIL</div>
+        <input id="auth-email" type="email" placeholder="your@email.com" style="width:100%;background:#080e18;border:1px solid #1a2535;color:#c8d8e8;padding:9px 12px;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:13px;outline:none" onfocus="this.style.borderColor='#00c8ff'" onblur="this.style.borderColor='#1a2535'">
+      </div>
+      <!-- Password -->
+      <div style="margin-bottom:6px">
+        <div style="font-size:9px;color:#4a6080;font-family:'Share Tech Mono',monospace;letter-spacing:1px;margin-bottom:5px">PASSWORD</div>
+        <input id="auth-pass" type="password" placeholder="••••••••" style="width:100%;background:#080e18;border:1px solid #1a2535;color:#c8d8e8;padding:9px 12px;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:13px;outline:none" onfocus="this.style.borderColor='#00c8ff'" onblur="this.style.borderColor='#1a2535'" onkeydown="if(event.key==='Enter')authSubmit()">
+      </div>
+      <!-- Error -->
+      <div id="auth-err" style="font-size:11px;color:#ff3b5c;font-family:'Share Tech Mono',monospace;min-height:18px;margin-bottom:10px"></div>
+      <!-- Submit -->
+      <button onclick="authSubmit()" id="auth-btn" style="width:100%;background:linear-gradient(135deg,#00c8ff,#0055ff);border:none;color:#fff;padding:10px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:700;letter-spacing:1px;cursor:pointer;transition:.18s">SIGN IN</button>
+      <!-- Google -->
+      <button onclick="authGoogle()" style="width:100%;background:rgba(255,255,255,.06);border:1px solid #1a2535;color:#c8d8e8;padding:9px;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:1px;cursor:pointer;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.18s" onmouseover="this.style.borderColor='#00c8ff'" onmouseout="this.style.borderColor='#1a2535'">
+        <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continue with Google
+      </button>
+      <!-- Skip -->
+      <button onclick="authSkip()" style="width:100%;background:transparent;border:none;color:#4a6080;padding:8px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-top:4px">USE WITHOUT ACCOUNT (local only)</button>
+    </div>
+  </div>
+</div>
+
+<!-- USER PILL in header (injected by JS) -->
+
+</body>
+</html>
