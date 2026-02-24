@@ -5,7 +5,134 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CasePulse — CS2 Case Analytics</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js">
+// ════════════════════════════════════════════
+// FIREBASE AUTH
+// ════════════════════════════════════════════
+const FB_CONFIG = {
+  apiKey:            "AIzaSyDWpkvKd8U5rih3YK7vVMmsQBIjslhTo5s",
+  authDomain:        "casepulse-40229.firebaseapp.com",
+  projectId:         "casepulse-40229",
+  storageBucket:     "casepulse-40229.firebasestorage.app",
+  messagingSenderId: "341334727568",
+  appId:             "1:341334727568:web:7e2cca100477c4fb84b115"
+};
+
+let db = null, auth = null, currentUser = null;
+
+function initFirebase() {
+  if (typeof firebase === 'undefined') { setTimeout(initFirebase, 200); return; }
+  if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+  auth = firebase.auth();
+  db   = firebase.firestore();
+  auth.onAuthStateChanged(function(user) {
+    currentUser = user;
+    updateUserUI(user);
+    if (user) {
+      document.getElementById('authModal').style.display = 'none';
+      loadPortfolioFromDB();
+    }
+  });
+}
+
+function authTab(tab) {
+  const isLogin = tab === 'login';
+  document.getElementById('tab-login').style.background    = isLogin ? 'rgba(0,200,255,.12)' : 'transparent';
+  document.getElementById('tab-login').style.color         = isLogin ? '#00c8ff' : '#4a6080';
+  document.getElementById('tab-login').style.borderColor   = isLogin ? '#00c8ff' : '#1a2535';
+  document.getElementById('tab-register').style.background = !isLogin ? 'rgba(0,200,255,.12)' : 'transparent';
+  document.getElementById('tab-register').style.color      = !isLogin ? '#00c8ff' : '#4a6080';
+  document.getElementById('tab-register').style.borderColor= !isLogin ? '#00c8ff' : '#1a2535';
+  document.getElementById('auth-btn').textContent = isLogin ? 'SIGN IN' : 'CREATE ACCOUNT';
+  document.getElementById('auth-err').textContent = '';
+  document.getElementById('auth-btn').dataset.tab = tab;
+}
+
+function authSubmit() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass  = document.getElementById('auth-pass').value;
+  const tab   = document.getElementById('auth-btn').dataset.tab || 'login';
+  const errEl = document.getElementById('auth-err');
+  errEl.textContent = '';
+  if (!email || !pass) { errEl.textContent = 'Please fill in all fields'; return; }
+  if (!auth) { authSkip(); return; }
+  const btn = document.getElementById('auth-btn');
+  btn.textContent = '...'; btn.disabled = true;
+  const promise = tab === 'login'
+    ? auth.signInWithEmailAndPassword(email, pass)
+    : auth.createUserWithEmailAndPassword(email, pass);
+  promise.catch(function(e) {
+    errEl.textContent = e.message.replace('Firebase: ','').replace(/\(auth.*\)/,'').trim();
+    btn.textContent = tab === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT';
+    btn.disabled = false;
+  });
+}
+
+function authGoogle() {
+  if (!auth) { authSkip(); return; }
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(function(e) {
+    document.getElementById('auth-err').textContent = e.message;
+  });
+}
+
+function authSkip() {
+  document.getElementById('authModal').style.display = 'none';
+}
+
+function authSignOut() {
+  if (auth) auth.signOut();
+  currentUser = null;
+  updateUserUI(null);
+}
+
+function updateUserUI(user) {
+  let pill = document.getElementById('user-pill');
+  if (!pill) {
+    pill = document.createElement('div');
+    pill.id = 'user-pill';
+    pill.style.cssText = 'display:flex;align-items:center;gap:7px;flex-shrink:0';
+    document.querySelector('.hdr-r').prepend(pill);
+  }
+  if (user) {
+    const name = user.displayName || user.email.split('@')[0];
+    pill.innerHTML =
+      '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#4a6080;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+name+'</div>' +
+      '<button onclick="authSignOut()" style="background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.25);color:#ff3b5c;padding:2px 8px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;cursor:pointer">OUT</button>';
+  } else {
+    pill.innerHTML =
+      '<button class="show-auth-btn" style="background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.25);color:#00c8ff;padding:3px 10px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;cursor:pointer">SIGN IN</button>';
+  }
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('show-auth-btn')) {
+    document.getElementById('authModal').style.display = 'flex';
+  }
+});
+
+async function loadPortfolioFromDB() {
+  if (!db || !currentUser) return;
+  try {
+    const doc = await db.collection('portfolios').doc(currentUser.uid).get();
+    if (doc.exists && doc.data().items) {
+      portfolio = doc.data().items;
+      localStorage.setItem('cp_portfolio', JSON.stringify(portfolio));
+      const pfPage = document.getElementById('page-portfolio');
+      if (pfPage && pfPage.style.display !== 'none') pfRender();
+      showToastMsg('☁️','Portfolio loaded','Synced from cloud');
+    }
+  } catch(e) { console.warn('Firestore load error:', e); }
+}
+
+async function savePortfolioToDB() {
+  if (!db || !currentUser) return;
+  try {
+    await db.collection('portfolios').doc(currentUser.uid).set({ items: portfolio, updatedAt: new Date().toISOString() });
+  } catch(e) { console.warn('Firestore save error:', e); }
+}
+
+</script>
 
 <style>
 :root{--bg:#0a0c10;--card:#131920;--border:#1a2535;--accent:#00c8ff;--green:#00ff88;--red:#ff3b5c;--yellow:#ffd700;--orange:#ff8c00;--purple:#c084fc;--text:#c8d8e8;--muted:#4a6080}
@@ -180,6 +307,10 @@ th.sd::after{content:' ↓';color:var(--accent)}
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 
@@ -547,7 +678,7 @@ async function fetchCase(cas){
     const d=await proxyFetch(url);
     if(!d?.success)return{...cas,price:0,volume:0};
     const price=parseFloat((d.lowest_price||'0').replace(/[^0-9.]/g,''))||0;
-    const volume=parseInt((d.volume||'0').replace(/[^0-9]/g,''))||0;
+    const volume=parseInt(String(d.volume||'0').replace(/[^0-9]/g,''))||0;
     return{...cas,price,volume};
   }catch(e){return{...cas,price:0,volume:0};}
 }
@@ -1346,7 +1477,7 @@ function showPage(page){
 // ════════════════════════════════════════════
 let portfolio=JSON.parse(localStorage.getItem('cp_portfolio')||'[]');
 
-function pfSave(){localStorage.setItem('cp_portfolio',JSON.stringify(portfolio));}
+function pfSave(){localStorage.setItem('cp_portfolio',JSON.stringify(portfolio));savePortfolioToDB();}
 
 function pfPopulateSelect(){
   const sel=document.getElementById('pf-select');
@@ -1555,281 +1686,24 @@ function openChart(caseName) {
 
 async function fetchPriceHistory(caseName, days) {
   try {
-    const url = `https://steamcommunity.com/market/pricehistory/?appid=730&market_hash_name=${encodeURIComponent(caseName)}`;
-    const raw = await proxyFetch(url);
-
-    if (!raw || !raw.prices || !raw.prices.length) {
-      showChartError('No price history available');
+    const url = 'https://steamcommunity.com/market/pricehistory/?appid=730&currency=1&market_hash_name=' + encodeURIComponent(caseName);
+    const d = await proxyFetch(url);
+    if (!d || !d.prices || !Array.isArray(d.prices)) {
+      document.getElementById('cmLoading').style.display = 'none';
+      document.getElementById('priceChart').style.display = 'none';
+      document.getElementById('cmInsight').style.display = 'block';
+      document.getElementById('cmInsight').innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">⚠️ Price history requires Steam login.<br>Available when logged in to Steam.</div>';
       return;
     }
-
-    // Steam format: [["Oct 01 2023 01: +0", price, volume], ...]
-    chartRawData = raw.prices.map(p => ({
-      date: new Date(p[0].slice(0, 12).trim()),
-      price: parseFloat(p[1]),
-      volume: parseInt(p[2]) || 0
-    })).filter(p => !isNaN(p.price) && p.date instanceof Date && !isNaN(p.date));
-
-    drawChart(days);
+    chartRawData = d.prices;
+    renderChart(days);
   } catch(e) {
-    showChartError('Failed to load: ' + e.message);
+    document.getElementById('cmLoading').style.display = 'none';
+    document.getElementById('cmInsight').style.display = 'block';
+    document.getElementById('cmInsight').innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">⚠️ Price history unavailable.</div>';
   }
 }
 
-function setRange(days, el) {
-  document.querySelectorAll('.rtab').forEach(t => t.classList.remove('on'));
-  el.classList.add('on');
-  if (chartRawData.length) drawChart(days);
-  else if (currentChartName) fetchPriceHistory(currentChartName, days);
-}
-
-function drawChart(days) {
-  let pts = chartRawData;
-  if (days > 0) {
-    const cutoff = new Date(Date.now() - days * 86400000);
-    pts = chartRawData.filter(p => p.date >= cutoff);
-  }
-  if (!pts.length) { showChartError('No data for this range'); return; }
-
-  // Daily aggregate (avg price per day)
-  const byDay = {};
-  pts.forEach(p => {
-    const k = p.date.toISOString().slice(0,10);
-    if (!byDay[k]) byDay[k] = {sum:0, cnt:0, vol:0};
-    byDay[k].sum += p.price;
-    byDay[k].cnt++;
-    byDay[k].vol += p.volume;
-  });
-  const labels = Object.keys(byDay).sort();
-  const prices = labels.map(k => +(byDay[k].sum/byDay[k].cnt).toFixed(4));
-  const volumes = labels.map(k => byDay[k].vol);
-
-  // Stats for insight
-  const minP = Math.min(...prices), maxP = Math.max(...prices);
-  const first = prices[0], last = prices[prices.length-1];
-  const change = ((last - first)/first*100).toFixed(1);
-  const avg7 = prices.slice(-7).reduce((a,b)=>a+b,0)/Math.min(7,prices.length);
-  const trend = last > avg7 * 1.02 ? 'rising' : last < avg7 * 0.98 ? 'falling' : 'stable';
-  const trendColor = trend==='rising'?'#ff3b5c':trend==='falling'?'#00ff88':'#ffd700';
-  const trendIco = trend==='rising'?'📈':trend==='falling'?'📉':'➡️';
-
-  // Gradient color line: green if going down (cheap), red if going up
-  const lineColor = parseFloat(change) <= 0 ? '#00ff88' : '#ff3b5c';
-  const fillColor = parseFloat(change) <= 0 ? 'rgba(0,255,136,0.08)' : 'rgba(255,59,92,0.08)';
-
-  // Build insight text
-  const insightEl = document.getElementById('cmInsight');
-  insightEl.style.display = 'block';
-  const rec = last <= minP * 1.1 ? '🟢 Price is near its historic low — <strong>good time to buy.</strong>'
-    : last >= maxP * 0.9 ? '🔴 Price is near its historic high — consider waiting.'
-    : `${trendIco} Trend is <span style="color:${trendColor}">${trend}</span>. ${parseFloat(change) <= -5 ? 'Recent drop could be a buying opportunity.' : parseFloat(change) >= 5 ? 'Recent rise — watch for pullback.' : 'Price is within normal range.'}`;
-  insightEl.innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px">
-      <div><span style="color:#4a6080;font-size:9px;font-family:'Share Tech Mono',monospace">PERIOD LOW</span><br><span style="color:#00ff88;font-weight:700">$${minP.toFixed(2)}</span></div>
-      <div><span style="color:#4a6080;font-size:9px;font-family:'Share Tech Mono',monospace">PERIOD HIGH</span><br><span style="color:#ff3b5c;font-weight:700">$${maxP.toFixed(2)}</span></div>
-      <div><span style="color:#4a6080;font-size:9px;font-family:'Share Tech Mono',monospace">CHANGE</span><br><span style="color:${parseFloat(change)<=0?'#00ff88':'#ff3b5c'};font-weight:700">${change > 0 ? '+' : ''}${change}%</span></div>
-    </div>
-    <div style="color:#c8d8e8">${rec}</div>
-  `;
-
-  // Draw
-  document.getElementById('cmLoading').style.display = 'none';
-  const canvas = document.getElementById('priceChart');
-  canvas.style.display = 'block';
-
-  if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-
-  const ctx = canvas.getContext('2d');
-  chartInstance = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: 'Price ($)',
-        data: prices,
-        borderColor: lineColor,
-        backgroundColor: fillColor,
-        borderWidth: 2,
-        pointRadius: labels.length > 60 ? 0 : 2,
-        pointHoverRadius: 5,
-        fill: true,
-        tension: 0.3,
-        yAxisID: 'y'
-      }, {
-        label: 'Volume',
-        data: volumes,
-        borderColor: 'rgba(100,120,180,0.5)',
-        backgroundColor: 'rgba(100,120,180,0.15)',
-        borderWidth: 1,
-        pointRadius: 0,
-        fill: true,
-        tension: 0.3,
-        yAxisID: 'y2'
-      }]
-    },
-    options: {
-      responsive: true,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#0d1420',
-          borderColor: '#1a2535',
-          borderWidth: 1,
-          titleColor: '#c8d8e8',
-          bodyColor: '#c8d8e8',
-          callbacks: {
-            label: ctx => ctx.datasetIndex === 0 ? ' $' + ctx.raw.toFixed(4) : ' Vol: ' + ctx.raw.toLocaleString('en')
-          }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(26,37,53,0.8)' },
-          ticks: { color: '#4a6080', font: { family: "'Share Tech Mono', monospace", size: 9 }, maxTicksLimit: 8, maxRotation: 0 }
-        },
-        y: {
-          position: 'left',
-          grid: { color: 'rgba(26,37,53,0.8)' },
-          ticks: { color: '#4a6080', font: { family: "'Share Tech Mono', monospace", size: 9 }, callback: v => '$' + v.toFixed(2) }
-        },
-        y2: {
-          position: 'right',
-          grid: { drawOnChartArea: false },
-          ticks: { color: 'rgba(100,120,180,0.5)', font: { size: 8 }, callback: v => v > 999 ? (v/1000).toFixed(0)+'k' : v }
-        }
-      }
-    }
-  });
-}
-
-function showChartError(msg) {
-  document.getElementById('cmLoading').innerHTML = `<div style="color:#ff3b5c;font-family:'Share Tech Mono',monospace;font-size:10px;text-align:center">${msg}<br><span style="color:#4a6080;font-size:9px;margin-top:4px;display:block">Steam API requires login for full history.<br>Try opening via Claude in Chrome.</span></div>`;
-}
-
-function closeChartModal(e) {
-  if (e.target === document.getElementById('chartModal')) {
-    document.getElementById('chartModal').style.display = 'none';
-    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
-  }
-}
-
-
-// ════════════════════════════════════════════
-// FIREBASE — loaded via CDN compat v9
-// ════════════════════════════════════════════
-const FB_CONFIG = {
-  apiKey:            "AIzaSyDWpkvKd8U5rih3YK7vVMmsQBIjslhTo5s",
-  authDomain:        "casepulse-40229.firebaseapp.com",
-  projectId:         "casepulse-40229",
-  storageBucket:     "casepulse-40229.firebasestorage.app",
-  messagingSenderId: "341334727568",
-  appId:             "1:341334727568:web:7e2cca100477c4fb84b115",
-  measurementId:     "G-G7GNLSMX38"
-};
-
-let db = null, auth = null, currentUser = null;
-const FB_READY = true;
-
-function initFirebase() {
-  if (typeof firebase === 'undefined') {
-    console.warn('Firebase SDK not loaded yet, retrying...');
-    setTimeout(initFirebase, 200);
-    return;
-  }
-  if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
-  auth = firebase.auth();
-  db   = firebase.firestore();
-
-  auth.onAuthStateChanged(function(user) {
-    currentUser = user;
-    updateUserUI(user);
-    if (user) {
-      document.getElementById('authModal').style.display = 'none';
-      loadPortfolioFromDB();
-    }
-  });
-}
-
-// ── Auth UI ──
-function authTab(tab) {
-  const isLogin = tab === 'login';
-  document.getElementById('tab-login').style.background    = isLogin ? 'rgba(0,200,255,.12)' : 'transparent';
-  document.getElementById('tab-login').style.color         = isLogin ? '#00c8ff' : '#4a6080';
-  document.getElementById('tab-login').style.borderColor   = isLogin ? '#00c8ff' : '#1a2535';
-  document.getElementById('tab-register').style.background = !isLogin ? 'rgba(0,200,255,.12)' : 'transparent';
-  document.getElementById('tab-register').style.color      = !isLogin ? '#00c8ff' : '#4a6080';
-  document.getElementById('tab-register').style.borderColor= !isLogin ? '#00c8ff' : '#1a2535';
-  document.getElementById('auth-btn').textContent = isLogin ? 'SIGN IN' : 'CREATE ACCOUNT';
-  document.getElementById('auth-err').textContent = '';
-  document.getElementById('auth-btn').dataset.tab = tab;
-}
-
-function authSubmit() {
-  if (!FB_READY) { authSkip(); return; }
-  const email = document.getElementById('auth-email').value.trim();
-  const pass  = document.getElementById('auth-pass').value;
-  const tab   = document.getElementById('auth-btn').dataset.tab || 'login';
-  const errEl = document.getElementById('auth-err');
-  errEl.textContent = '';
-  if (!email || !pass) { errEl.textContent = 'Please fill in all fields'; return; }
-  const btn = document.getElementById('auth-btn');
-  btn.textContent = '...'; btn.disabled = true;
-  const promise = tab === 'login'
-    ? auth.signInWithEmailAndPassword(email, pass)
-    : auth.createUserWithEmailAndPassword(email, pass);
-  promise.catch(function(e) {
-    errEl.textContent = e.message.replace('Firebase: ','').replace(/\(auth.*\)/,'').trim();
-    btn.textContent = tab === 'login' ? 'SIGN IN' : 'CREATE ACCOUNT';
-    btn.disabled = false;
-  });
-}
-
-function authGoogle() {
-  if (!FB_READY) { authSkip(); return; }
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(function(e) {
-    document.getElementById('auth-err').textContent = e.message;
-  });
-}
-
-function authSkip() {
-  document.getElementById('authModal').style.display = 'none';
-}
-
-function authSignOut() {
-  if (auth) auth.signOut();
-  currentUser = null;
-  updateUserUI(null);
-}
-
-function updateUserUI(user) {
-  let pill = document.getElementById('user-pill');
-  if (!pill) {
-    pill = document.createElement('div');
-    pill.id = 'user-pill';
-    pill.style.cssText = 'display:flex;align-items:center;gap:7px;flex-shrink:0';
-    document.querySelector('.hdr-r').prepend(pill);
-  }
-  if (user) {
-    const name = user.displayName || user.email.split('@')[0];
-    pill.innerHTML =
-      '<div style="font-family:Share Tech Mono,monospace;font-size:9px;color:#4a6080;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+name+'</div>' +
-      '<button onclick="authSignOut()" style="background:rgba(255,59,92,.1);border:1px solid rgba(255,59,92,.25);color:#ff3b5c;padding:2px 8px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;cursor:pointer">OUT</button>';
-  } else {
-    pill.innerHTML =
-      '<button class="show-auth-btn" style="background:rgba(0,200,255,.1);border:1px solid rgba(0,200,255,.25);color:#00c8ff;padding:3px 10px;border-radius:3px;font-family:Rajdhani,sans-serif;font-size:10px;font-weight:600;letter-spacing:1px;cursor:pointer">SIGN IN</button>';
-  }
-}
-
-// click handler for dynamically created sign-in button
-document.addEventListener('click', function(e) {
-  if (e.target.classList.contains('show-auth-btn')) {
-    document.getElementById('authModal').style.display = 'flex';
-  }
-});
-
-// ── Firestore sync ──
 async function loadPortfolioFromDB() {
   if (!db || !currentUser) return;
   try {
@@ -1941,7 +1815,7 @@ window.addEventListener('load',()=>{
         Continue with Google
       </button>
       <!-- Skip -->
-      <button onclick="authSkip()" style="width:100%;background:transparent;border:none;color:#4a6080;padding:8px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-top:4px">USE WITHOUT ACCOUNT (local only)</button>
+
     </div>
   </div>
 </div>
