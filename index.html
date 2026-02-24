@@ -507,7 +507,7 @@ function isRecent(c){return ageYears(c.released)<=3;}
 function isOld(c){return ageYears(c.released)>3;}
 
 // ── State ──
-let data=[], prevPrices={}, sortCol='qty', sortDir=-1, filterCat='all', countdown=90, cdTimer;
+let data=[], prevPrices={}, priceCache={}, sortCol='qty', sortDir=-1, filterCat='all', countdown=90, cdTimer;
 
 // ── Sliders ──
 document.getElementById('bT').addEventListener('input',function(){document.getElementById('bTv').textContent=this.value+'%';if(data.length){render(data);updateStats(data);}});
@@ -594,6 +594,7 @@ async function fetchAll(){
     setApiSt('✅ Steam Market · '+data.filter(d=>d.price>0).length+' cases');
   }
   render(data);updateStats(data);
+  recordPfSnapshot();
   setPgf(100);
   document.getElementById('s0s').textContent='loaded '+data.filter(d=>d.price>0).length+'/'+CASES.length;
   document.getElementById('upd').textContent='// UPDATED '+new Date().toLocaleTimeString('en');
@@ -1327,12 +1328,7 @@ function renderPfChart() {
   });
 }
 
-// Record snapshot every time prices refresh
-const _origCheckChanges = checkChanges;
-function checkChanges(d) {
-  _origCheckChanges(d);
-  recordPfSnapshot();
-}
+// Record snapshot every time prices refresh (called after fetchAll)
 
 // ════════════════════════════════════════════
 // PAGE NAVIGATION
