@@ -142,52 +142,27 @@ th.sd::after{content:' ↓';color:var(--accent)}
 /* RESPONSIVE */
 @media(max-width:1100px){.main{padding:12px 14px}.stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){
-  /* Header */
-  .hdr{padding:9px 12px;gap:6px;flex-wrap:nowrap}
-  .logo-t{font-size:13px;letter-spacing:1px}.logo-s{display:none}.api-st{display:none}
-  .nav-tab{font-size:10px;padding:4px 9px}
+  .hdr{padding:10px 12px;gap:8px}
+  .logo-t{font-size:14px}.logo-s{display:none}.api-st{display:none}
+  .nav-tab{font-size:10px;padding:4px 10px}
   .live-b{font-size:9px;padding:3px 7px}
   #refresh-ring{display:none}
-
-  /* Layout */
-  .main{padding:8px}
-  .stats{grid-template-columns:repeat(2,1fr);gap:6px}
-  .sc{padding:9px 11px}.sv{font-size:16px}
-
-  /* Controls — hide sliders on mobile, keep tabs */
-  .ctrl{flex-direction:column;align-items:stretch;gap:6px;padding:9px 11px}
+  .main{padding:10px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:7px}
+  .sc{padding:10px 12px}.sv{font-size:17px}
+  .ctrl{flex-direction:column;align-items:stretch;gap:8px;padding:10px 12px}
   .ctrl .divider{width:100%;height:1px}
   .cg{justify-content:space-between}
-  input[type=range]{width:130px}
-  .tabs{gap:3px;flex-wrap:wrap}
-  .tab{font-size:9px;padding:3px 6px;letter-spacing:.5px}
-
-  /* Table — mobile optimized: Case | Price | Verdict+Buy */
+  input[type=range]{width:150px}
+  .tabs{gap:3px;flex-wrap:wrap}.tab{font-size:10px;padding:3px 7px}
   .col-hide{display:none}
   td.col-hide{display:none}
-  table{table-layout:fixed;width:100%}
-  thead th:nth-child(1){width:45%}  /* CASE */
-  thead th:nth-child(4){width:18%}  /* PRICE */
-  thead th:nth-child(6){width:14%}  /* DELTA */
-  thead th:nth-child(8){width:23%}  /* VERDICT */
-  td{padding:7px 7px;font-size:11px;vertical-align:middle}
-
-  /* Verdict cell — stack verdict + buy button vertically */
-  .vrd-wrap{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
-  .vrd{font-size:9px;padding:2px 5px}
-  .steam-btn{font-size:11px;padding:7px 10px;width:100%;justify-content:center;display:flex;border-radius:5px}
-
-  /* Case name cell */
-  .ci{width:26px;height:26px;font-size:11px;flex-shrink:0}
-  .cn{font-size:11px;white-space:normal;word-break:break-word;line-height:1.2}
-  .cm{display:none} /* hide badges on mobile to save space */
-
-  /* Modals */
+  td{padding:7px 8px;font-size:11px}
   .modal-bg{padding:0}.modal-box{border-radius:0;min-height:100vh}
-
-  /* Portfolio add form */
   .pf-add-row{flex-direction:column;align-items:stretch}
   .pf-add-row > *{width:100%!important}
+  .vrd-wrap{display:flex;flex-direction:column;gap:4px;align-items:stretch}
+  .steam-btn{font-size:11px;padding:8px 10px;width:100%;justify-content:center;display:flex}
 }
 @media(max-width:400px){
   .stats{grid-template-columns:repeat(2,1fr)}
@@ -532,7 +507,7 @@ function isRecent(c){return ageYears(c.released)<=3;}
 function isOld(c){return ageYears(c.released)>3;}
 
 // ── State ──
-let data=[], prevPrices={}, sortCol='qty', sortDir=-1, filterCat='all', countdown=90, cdTimer;
+let data=[], prevPrices={}, priceCache={}, sortCol='qty', sortDir=-1, filterCat='all', countdown=90, cdTimer;
 
 // ── Sliders ──
 document.getElementById('bT').addEventListener('input',function(){document.getElementById('bTv').textContent=this.value+'%';if(data.length){render(data);updateStats(data);}});
@@ -541,20 +516,29 @@ const getBT=()=>parseInt(document.getElementById('bT').value)/100;
 const getST=()=>parseInt(document.getElementById('sT').value)/100;
 
 async function proxyFetch(url){
-  // corsproxy.io - works on GitHub Pages
-  try {
-    const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
-    if (r.ok) {
-      const d = await r.json();
-      if (d && (d.success !== undefined || d.lowest_price)) return d;
+  // Try multiple CORS proxies in order
+  const proxies = [
+    async () => {
+      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(url));
+      return await r.json();
+    },
+    async () => {
+      const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url));
+      const w = await r.json();
+      return JSON.parse(w.contents);
+    },
+    async () => {
+      const r = await fetch('https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url));
+      return await r.json();
     }
-  } catch(e) {}
-  // fallback: allorigins
-  try {
-    const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url));
-    const w = await r.json();
-    return JSON.parse(w.contents);
-  } catch(e) {}
+  ];
+  for (const proxy of proxies) {
+    try {
+      const d = await proxy();
+      if (d && d.success !== undefined) return d;
+      if (d && d.lowest_price) return d;
+    } catch(e) {}
+  }
   return { success: false };
 }
 async function fetchCase(cas){
@@ -563,7 +547,7 @@ async function fetchCase(cas){
     const d=await proxyFetch(url);
     if(!d?.success)return{...cas,price:0,volume:0};
     const price=parseFloat((d.lowest_price||'0').replace(/[^0-9.]/g,''))||0;
-    const volume=parseInt((d.volume||'0').replace(/[^0-9]/g,''))||0;
+    const volume=parseInt(String(d.volume||'0').replace(/[^0-9]/g,''))||0;
     return{...cas,price,volume};
   }catch(e){return{...cas,price:0,volume:0};}
 }
@@ -604,7 +588,7 @@ async function fetchAll(){
   const final=results.filter(Boolean);
   if(!final.some(r=>r.price>0)){
     data=CASES.map(c=>({...c,price:0,volume:0}));
-    setApiSt('⚠️ Steam unavailable — try refresh');
+    setApiSt('⚠️ Steam unavailable');
   }else{
     data=final;
     setApiSt('✅ Steam Market · '+data.filter(d=>d.price>0).length+' cases');
@@ -728,14 +712,14 @@ function updateStats(pool){
 }
 
 function checkChanges(fresh){
-  fresh.forEach(item=>{
+  if(!Array.isArray(fresh))return;
+  fresh.forEach(function(item){
     const prev=prevPrices[item.name];
     if(prev&&item.price>0){
       const diff=item.price-prev;
       const pct=Math.abs(diff)/prev;
       if(pct>.04&&diff<0)showToastMsg(item.e||'📦',item.name,'Price dropped $'+prev.toFixed(2)+' → $'+item.price.toFixed(2));
       if(pct>.04&&diff>0)showToastMsg(item.e||'📦',item.name,'Price up $'+prev.toFixed(2)+' → $'+item.price.toFixed(2));
-      // Animate price cell
       if(pct>.001){
         const el=document.querySelector('[data-pn="'+item.name+'"]');
         if(el){
@@ -776,21 +760,21 @@ function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
 function getDemoData(){
   return CASES.map(c=>{
     const demoP={
-      "Fever Case":0.68,"Gallery Case":0.42,"Kilowatt Case":0.13,"Recoil Case":0.15,
-      "Revolution Case":0.15,"Dreams & Nightmares Case":0.78,"Fracture Case":0.35,
-      "Snakebite Case":0.47,"Prisma 2 Case":0.52,"CS20 Case":1.45,"Prisma Case":0.48,
-      "Operation Riptide Case":1.12,"Operation Broken Fang Case":2.85,"Shattered Web Case":3.40,
-      "Operation Hydra Case":4.20,"Operation Wildfire Case":5.60,
-      "Operation Vanguard Weapon Case":8.90,"Operation Breakout Weapon Case":12.50,
-      "Operation Phoenix Weapon Case":9.80,"Operation Bravo Case":18.40,
-      "Danger Zone Case":0.62,"Horizon Case":1.20,"Clutch Case":1.85,
-      "Spectrum 2 Case":0.89,"Spectrum Case":1.45,"Glove Case":3.90,
-      "Gamma 2 Case":2.10,"Gamma Case":2.85,"Chroma 3 Case":2.30,
-      "Chroma 2 Case":3.60,"Chroma Case":4.80,"Revolver Case":0.35,
-      "Shadow Case":1.10,"Falchion Case":2.60,"Huntsman Weapon Case":4.50,
-      "Winter Offensive Weapon Case":6.80,"CS:GO Weapon Case 3":7.20,
-      "CS:GO Weapon Case 2":11.50,"CS:GO Weapon Case":14.90,
-      "eSports 2014 Summer Case":22.80,"eSports 2013 Winter Case":28.50,"eSports 2013 Case":31.20,
+      "Fever Case":0.45,"Gallery Case":0.33,"Kilowatt Case":0.29,"Recoil Case":0.18,
+      "Revolution Case":0.18,"Dreams & Nightmares Case":0.62,"Fracture Case":0.28,
+      "Snakebite Case":0.38,"Prisma 2 Case":0.44,"CS20 Case":1.20,"Prisma Case":0.40,
+      "Operation Riptide Case":0.95,"Operation Broken Fang Case":2.60,"Shattered Web Case":3.10,
+      "Operation Hydra Case":3.80,"Operation Wildfire Case":5.20,
+      "Operation Vanguard Weapon Case":8.50,"Operation Breakout Weapon Case":11.80,
+      "Operation Phoenix Weapon Case":9.20,"Operation Bravo Case":17.50,
+      "Danger Zone Case":0.55,"Horizon Case":1.05,"Clutch Case":1.65,
+      "Spectrum 2 Case":0.80,"Spectrum Case":1.30,"Glove Case":3.70,
+      "Gamma 2 Case":1.95,"Gamma Case":2.65,"Chroma 3 Case":2.10,
+      "Chroma 2 Case":3.40,"Chroma Case":4.50,"Revolver Case":0.30,
+      "Shadow Case":1.00,"Falchion Case":2.40,"Huntsman Weapon Case":4.20,
+      "Winter Offensive Weapon Case":6.50,"CS:GO Weapon Case 3":6.90,
+      "CS:GO Weapon Case 2":11.00,"CS:GO Weapon Case":14.50,
+      "eSports 2014 Summer Case":21.50,"eSports 2013 Winter Case":27.00,"eSports 2013 Case":29.50,
     };
     const demoV={
       "Fever Case":310262,"Gallery Case":198000,"Kilowatt Case":750494,"Recoil Case":540723,
@@ -1344,7 +1328,7 @@ function renderPfChart() {
   });
 }
 
-// Record snapshot after each price refresh (called in fetchAll)
+// Record snapshot every time prices refresh (called after fetchAll)
 
 // ════════════════════════════════════════════
 // PAGE NAVIGATION
@@ -1957,7 +1941,7 @@ window.addEventListener('load',()=>{
         Continue with Google
       </button>
       <!-- Skip -->
-
+      <button onclick="authSkip()" style="width:100%;background:transparent;border:none;color:#4a6080;padding:8px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;cursor:pointer;margin-top:4px">USE WITHOUT ACCOUNT (local only)</button>
     </div>
   </div>
 </div>
