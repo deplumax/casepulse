@@ -542,12 +542,14 @@ async function proxyFetch(url){
   return { success: false };
 }
 async function fetchCase(cas){
-  const url='https://steamcommunity.com/market/priceoverview/?appid=730&currency=1&market_hash_name='+cas.hash;
+  // Use search/render — returns sell_listings (current listings count) + price
+  const url='https://steamcommunity.com/market/search/render/?appid=730&norender=1&count=1&search_descriptions=0&query='+cas.hash;
   try{
     const d=await proxyFetch(url);
-    if(!d?.success)return{...cas,price:0,volume:0};
-    const price=parseFloat((d.lowest_price||'0').replace(/[^0-9.]/g,''))||0;
-    const volume=parseInt(String(d.volume||'0').replace(/[^0-9]/g,''))||0;
+    if(!d?.success||!d.results||!d.results[0])return{...cas,price:0,volume:0};
+    const item=d.results[0];
+    const price=(item.sell_price||0)/100;
+    const volume=item.sell_listings||0;
     return{...cas,price,volume};
   }catch(e){return{...cas,price:0,volume:0};}
 }
