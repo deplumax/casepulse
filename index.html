@@ -73,6 +73,7 @@ tbody tr:last-child{border-bottom:none}
 td{padding:8px 10px;font-size:12px;vertical-align:middle}
 .sec-row{cursor:default!important}
 .sec-row:hover{background:transparent!important}
+.mob-info{display:none}
 .sec-row td{background:rgba(255,255,255,.01);padding:4px 10px;font-size:8px;font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid var(--border)}
 
 /* CELLS */
@@ -142,27 +143,54 @@ th.sd::after{content:' ↓';color:var(--accent)}
 /* RESPONSIVE */
 @media(max-width:1100px){.main{padding:12px 14px}.stats{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){
-  .hdr{padding:10px 12px;gap:8px}
-  .logo-t{font-size:14px}.logo-s{display:none}.api-st{display:none}
-  .nav-tab{font-size:10px;padding:4px 10px}
-  .live-b{font-size:9px;padding:3px 7px}
-  #refresh-ring{display:none}
-  .main{padding:10px}
-  .stats{grid-template-columns:repeat(2,1fr);gap:7px}
-  .sc{padding:10px 12px}.sv{font-size:17px}
-  .ctrl{flex-direction:column;align-items:stretch;gap:8px;padding:10px 12px}
+  /* Header */
+  .hdr{padding:8px 10px;gap:6px;flex-wrap:nowrap;overflow:hidden}
+  .logo-t{font-size:13px}.logo-s{display:none}.api-st{display:none}
+  .logo-i{font-size:18px}
+  .nav-tab{font-size:10px;padding:4px 8px}
+  .live-b{font-size:8px;padding:2px 6px;white-space:nowrap;flex-shrink:0}
+  #refresh-ring{width:14px;height:14px;flex-shrink:0}
+  #cd{font-size:8px}
+
+  /* Layout */
+  .main{padding:8px 6px}
+  .stats{grid-template-columns:repeat(2,1fr);gap:6px}
+  .sc{padding:8px 10px}.sv{font-size:16px}
+  .ctrl{flex-direction:column;align-items:stretch;gap:7px;padding:10px}
   .ctrl .divider{width:100%;height:1px}
   .cg{justify-content:space-between}
-  input[type=range]{width:150px}
-  .tabs{gap:3px;flex-wrap:wrap}.tab{font-size:10px;padding:3px 7px}
+  input[type=range]{width:120px}
+  .tabs{gap:3px;flex-wrap:wrap}.tab{font-size:9px;padding:3px 6px}
+
+  /* Table */
   .col-hide{display:none}
   td.col-hide{display:none}
-  td{padding:7px 8px;font-size:11px}
+  th.mob-hide,td.mob-hide{display:none}
+  table{table-layout:fixed;width:100%}
+  thead th:nth-child(1){width:auto}
+  thead th:nth-child(4){width:17%}
+  thead th:nth-child(6){width:15%}
+  thead th:nth-child(8){width:32%}
+  td{padding:6px 5px;font-size:10px;vertical-align:top}
+  th{padding:5px;font-size:9px;letter-spacing:.5px}
+  .cn{font-size:10px;line-height:1.3}
+  .ci{font-size:18px;margin-right:5px;flex-shrink:0}
+  .nc{align-items:flex-start}
+
+  /* Tags under case name */
+  .mob-info{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
+
+  /* Verdict + Buy column */
+  .vrd-wrap{display:flex;flex-direction:column;gap:4px;align-items:stretch}
+  .vrd{font-size:8px;padding:2px 5px;text-align:center}
+  .steam-btn{font-size:9px;padding:4px 3px;width:100%;justify-content:center;display:flex;text-align:center;white-space:nowrap}
+  #th-verdict{font-size:8px;letter-spacing:0;white-space:nowrap}
+  .bdg{font-size:7px;padding:1px 4px}
+
+  /* Modals */
   .modal-bg{padding:0}.modal-box{border-radius:0;min-height:100vh}
   .pf-add-row{flex-direction:column;align-items:stretch}
   .pf-add-row > *{width:100%!important}
-  .vrd-wrap{display:flex;flex-direction:column;gap:4px;align-items:stretch}
-  .steam-btn{font-size:11px;padding:8px 10px;width:100%;justify-content:center;display:flex}
 }
 @media(max-width:400px){
   .stats{grid-template-columns:repeat(2,1fr)}
@@ -292,14 +320,14 @@ th.sd::after{content:' ↓';color:var(--accent)}
   <div style="overflow-x:auto">
     <table>
       <thead><tr>
-        <th style="min-width:200px">CASE</th>
-        <th class="srt col-hide" data-c="age" onclick="sortBy('age')">RELEASE</th>
-        <th class="srt" data-c="qty" onclick="sortBy('qty')">VOLUME</th>
+        <th style="min-width:160px">CASE</th>
+        <th class="srt mob-hide" data-c="age" onclick="sortBy('age')">RELEASE</th>
+        <th class="srt mob-hide" data-c="qty" onclick="sortBy('qty')">VOLUME</th>
         <th class="srt" data-c="price" onclick="sortBy('price')">PRICE</th>
-        <th class="col-hide" title="Weighted average price of cases with similar trading volume" style="cursor:help">AVG PRICE <span onclick="event.stopPropagation();alert('AVG PRICE — средневзвешенная цена кейсов с похожим объёмом торгов.\n\nПоказывает норму для данного уровня популярности.\n\nЕсли цена ниже AVG — кейс дешевле нормы (потенциально выгодно купить).')" style="cursor:pointer;color:#00c8ff;font-size:11px">?</span></th>
+        <th class="mob-hide" title="Weighted average price of cases with similar trading volume" style="cursor:help">AVG PRICE <span onclick="event.stopPropagation();alert('AVG PRICE — средневзвешенная цена кейсов с похожим объёмом торгов.\n\nПоказывает норму для данного уровня популярности.\n\nЕсли цена ниже AVG — кейс дешевле нормы (потенциально выгодно купить).')" style="cursor:pointer;color:#00c8ff;font-size:11px">?</span></th>
         <th class="srt" data-c="delta" onclick="sortBy('delta')">DELTA</th>
-        <th class="srt col-hide" data-c="score" onclick="sortBy('score')">SCORE</th>
-        <th>VERDICT</th>
+        <th class="srt mob-hide" data-c="score" onclick="sortBy('score')">SCORE</th>
+        <th id="th-verdict">VERDICT</th>
       </tr></thead>
       <tbody id="tbody"><tr><td colspan="8" class="empty"><div>⏳</div>Loading...</td></tr></tbody>
     </table>
@@ -649,7 +677,7 @@ function render(pool){
       const sec=secOf(item);
       if(sec!==lastSec){
         const cnt=view.filter(i=>secOf(i)===sec).length;
-        html+='<tr class="sec-row"><td colspan="8">── '+sec+' ('+cnt+')</td></tr>';
+        html+='<tr class="sec-row"><td colspan="100">── '+sec+' ('+cnt+')</td></tr>';
         lastSec=sec;
       }
     }
@@ -676,18 +704,24 @@ function render(pool){
       (item.cat==='operation'?'<span class="bdg b-op">OP</span>':'')+
       (item.volume>400000?'<span class="bdg b-hot">HOT</span>':'')+
       (price>0&&price<0.20?'<span class="bdg b-cheap">CHEAP</span>':'')+
+      '<div class="mob-info" style="margin-top:4px;flex-wrap:wrap;gap:3px">'+
+      '<span style="background:rgba(255,255,255,.06);border:1px solid #1a2535;border-radius:3px;padding:1px 5px;font-size:8px;color:#4a6080;font-family:Share Tech Mono,monospace">'+new Date(item.released).getFullYear()+'</span>'+
+      '<span style="background:rgba(0,200,255,.06);border:1px solid rgba(0,200,255,.15);border-radius:3px;padding:1px 5px;font-size:8px;color:#00c8ff;font-family:Share Tech Mono,monospace">vol '+(item.volume>0?item.volume.toLocaleString('en'):'—')+'</span>'+
+      '<span style="background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.15);border-radius:3px;padding:1px 5px;font-size:8px;color:#ffd700;font-family:Share Tech Mono,monospace">avg '+(avg>0&&price>0?'$'+avg.toFixed(2):'—')+'</span>'+
+      '<span style="background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.15);border-radius:3px;padding:1px 5px;font-size:8px;color:#00ff88;font-family:Share Tech Mono,monospace">sc '+(price>0?sc:'—')+'</span>'+
+      '</div>'+
       '</div></div></div></td>'+
-      '<td class="col-hide"><div class="mono" style="font-size:10px;color:'+(isRecent(item)?'var(--accent)':'var(--muted)')+'">'+new Date(item.released).getFullYear()+'</div>'+
+      '<td class="mob-hide"><div class="mono" style="font-size:10px;color:'+(isRecent(item)?'var(--accent)':'var(--muted)')+'">'+new Date(item.released).getFullYear()+'</div>'+
       '<div class="mono" style="font-size:9px;color:var(--muted)">'+ageStr+' ago</div></td>'+
-      '<td class="mono" style="font-size:10px">'+(item.volume>0?item.volume.toLocaleString('en'):'—')+'</td>'+
+      '<td class="mono mob-hide" style="font-size:10px">'+(item.volume>0?item.volume.toLocaleString('en'):'—')+'</td>'+
       '<td class="mono" data-pn="'+item.name+'" style="color:'+pC+';font-weight:700;font-size:12px">'+(price>0?'$'+price.toFixed(2)+'<span class="pa"></span>':'—')+'</td>'+
-      '<td class="mono col-hide" style="font-size:10px;color:var(--muted)">'+(avg>0&&price>0?'$'+avg.toFixed(2):'—')+'</td>'+
+      '<td class="mono mob-hide" style="font-size:10px;color:var(--muted)">'+(avg>0&&price>0?'$'+avg.toFixed(2):'—')+'</td>'+
       '<td>'+(price>0?'<span class="dlt '+dCls+'">'+dIco+' '+dStr+'</span>':'<span style="color:var(--muted);font-size:9px">—</span>')+'</td>'+
-      '<td class="col-hide"><div style="display:flex;align-items:center;gap:5px">'+
+      '<td class="mob-hide"><div style="display:flex;align-items:center;gap:5px">'+
       '<div style="width:38px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+sc+'%;background:'+scC+';border-radius:2px"></div></div>'+
       '<span class="mono" style="font-size:9px;color:'+scC+'">'+(price>0?sc:'—')+'</span></div></td>'+
       '<td><div class="vrd-wrap">'+vrdHTML+
-      (price>0?'<a href="'+buyURL+'" target="_blank" class="steam-btn" onclick="event.stopPropagation()">🛒 Buy on Steam</a>':'')+
+      (price>0?'<a href="'+buyURL+'" target="_blank" class="steam-btn" onclick="event.stopPropagation()">🛒 Buy</a>':'')+
       '</div></td>'+
       '</tr>';
   });
