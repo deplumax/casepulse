@@ -462,10 +462,10 @@ th.sd::after{content:' ↓';color:var(--accent)}
   <div style="overflow-x:auto">
     <table>
       <thead><tr>
-        <th style="min-width:190px">ITEM</th>
+        <th>ITEM</th>
         <th>QTY</th>
-        <th>BUY PRICE</th>
-        <th>NOW</th>
+        <th class="col-hide">BUY PR</th>
+        <th class="col-hide">NOW</th>
         <th class="col-hide">INVESTED</th>
         <th class="col-hide">VALUE</th>
         <th>P&L</th>
@@ -1432,6 +1432,20 @@ function pfClear(){if(!portfolio.length)return;if(confirm('Clear entire portfoli
 function pfRender(){
   const tbody=document.getElementById('pf-tbody');
   if(!tbody)return;
+  // Stack identical items (same name, same buyPrice=0 means imported)
+  const stackKey = item => item.name + '|' + item.buyPrice;
+  const stacked = [];
+  const seen = {};
+  portfolio.forEach(function(item){
+    const key = stackKey(item);
+    if(item.buyPrice===0 && seen[key]!==undefined){
+      stacked[seen[key]].qty += item.qty;
+    } else {
+      seen[key] = stacked.length;
+      stacked.push({...item, qty: item.qty});
+    }
+  });
+  const displayPortfolio = stacked;
   if(!portfolio.length){
     tbody.innerHTML='<tr><td colspan="9" class="empty"><div>\u{1F4EB}</div>No cases yet \u2014 add some above</td></tr>';
     pfSummary(0,0,0);return;
@@ -1439,7 +1453,7 @@ function pfRender(){
   const vp=data.filter(d=>d.price>0);
   let totInv=0,totVal=0,totUnits=0;
   const rows=[];
-  portfolio.forEach(function(item){
+  displayPortfolio.forEach(function(item){
     const live = item.type==='skin'
       ? null
       : data.find(function(d){return d.name===item.name;});
@@ -1485,8 +1499,8 @@ function pfRender(){
       +'<span class="mono" style="font-size:12px;min-width:20px;text-align:center">'+item.qty+'</span>'
       +'<button class="qty-btn" data-id="'+item.id+'" data-d="1">+</button>'
       +'</div></td>'
-      +'<td class="mono" style="font-size:11px;color:var(--muted)">$'+item.buyPrice.toFixed(2)+'</td>'
-      +'<td class="mono" style="font-size:11px">'+(cur>0?'$'+cur.toFixed(2):'\u2014')+'</td>'
+      +'<td class="mono col-hide" style="font-size:11px;color:var(--muted)">$'+item.buyPrice.toFixed(2)+'</td>'
+      +'<td class="mono col-hide" style="font-size:11px">'+(cur>0?'$'+cur.toFixed(2):'\u2014')+'</td>'
       +'<td class="mono col-hide" style="font-size:11px">$'+inv.toFixed(2)+'</td>'
       +'<td class="mono col-hide" style="font-size:11px;color:'+(cur>0?'var(--text)':'var(--muted)')+'">'+( cur>0?'$'+val.toFixed(2):'\u2014')+'</td>'
       +'<td><span class="mono" style="font-size:11px;font-weight:700;color:'+pC+'">'+(cur>0?(pnl>=0?'+':'')+' $'+pnl.toFixed(2):'\u2014')+'</span>'
