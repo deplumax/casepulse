@@ -166,6 +166,7 @@ th.sd::after{content:' ↓';color:var(--accent)}
   .col-hide{display:none}
   td.col-hide{display:none}
   th.mob-hide,td.mob-hide,.mob-hide{display:none}
+  .sec-row{display:none}
   table{table-layout:fixed;width:100%}
   thead th:nth-child(1){width:auto}
   thead th:nth-child(4){width:17%}
@@ -302,10 +303,10 @@ th.sd::after{content:' ↓';color:var(--accent)}
   <div class="cg"><input type="range" id="sT" min="5" max="40" value="15"><span class="rv" id="sTv">15%</span></div>
   <div class="divider"></div>
   <div class="tabs">
-    <button class="tab on mob-hide" onclick="setCat('all',this)">All (42)</button>
-    <button class="tab mob-hide" onclick="setCat('recent',this)" style="border-color:rgba(0,200,255,.3)">🆕 Recent</button>
-    <button class="tab mob-hide" onclick="setCat('operation',this)" style="border-color:rgba(192,132,252,.3)">🟣 Operation</button>
-    <button class="tab mob-hide" onclick="setCat('old',this)" style="border-color:rgba(255,140,0,.3)">🟠 Old</button>
+    <button class="tab on" onclick="setCat('all',this)">All (42)</button>
+    <button class="tab" onclick="setCat('recent',this)" style="border-color:rgba(0,200,255,.3)">🆕 Recent</button>
+    <button class="tab" onclick="setCat('operation',this)" style="border-color:rgba(192,132,252,.3)">🟣 Operation</button>
+    <button class="tab" onclick="setCat('old',this)" style="border-color:rgba(255,140,0,.3)">🟠 Old</button>
     <button class="tab" onclick="setCat('buy',this)" style="border-color:rgba(0,255,136,.3);color:var(--green)">✅ BUY only</button>
     <button class="tab" onclick="setCat('cheap',this)" style="border-color:rgba(255,200,0,.3);color:#ffc800">💰 Cheap</button>
   </div>
