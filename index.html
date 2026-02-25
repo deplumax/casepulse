@@ -73,6 +73,7 @@ tbody tr:last-child{border-bottom:none}
 td{padding:8px 10px;font-size:12px;vertical-align:middle}
 .sec-row{cursor:default!important}
 .sec-row:hover{background:transparent!important}
+.mob-info{display:none}
 .sec-row td{background:rgba(255,255,255,.01);padding:4px 10px;font-size:8px;font-family:'Share Tech Mono',monospace;color:var(--muted);letter-spacing:3px;text-transform:uppercase;border-bottom:1px solid var(--border)}
 
 /* CELLS */
@@ -177,12 +178,12 @@ th.sd::after{content:' ↓';color:var(--accent)}
   .nc{align-items:flex-start}
 
   /* Tags under case name */
-  .mob-info{display:flex!important;flex-wrap:wrap;gap:3px;margin-top:4px}
+  .mob-info{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}
 
   /* Verdict + Buy column */
   .vrd-wrap{display:flex;flex-direction:column;gap:4px;align-items:stretch}
   .vrd{font-size:8px;padding:2px 5px;text-align:center}
-  .steam-btn{font-size:9px!important;padding:4px 3px!important;width:100%;justify-content:center;display:flex;text-align:center;white-space:nowrap}
+  .steam-btn{font-size:9px;padding:4px 3px;width:100%;justify-content:center;display:flex;text-align:center;white-space:nowrap}
   #th-verdict{font-size:8px;letter-spacing:0;white-space:nowrap}
   .bdg{font-size:7px;padding:1px 4px}
 
@@ -319,7 +320,7 @@ th.sd::after{content:' ↓';color:var(--accent)}
   <div style="overflow-x:auto">
     <table>
       <thead><tr>
-        <th>CASE</th>
+        <th style="min-width:160px">CASE</th>
         <th class="srt mob-hide" data-c="age" onclick="sortBy('age')">RELEASE</th>
         <th class="srt mob-hide" data-c="qty" onclick="sortBy('qty')">VOLUME</th>
         <th class="srt" data-c="price" onclick="sortBy('price')">PRICE</th>
@@ -703,7 +704,7 @@ function render(pool){
       (item.cat==='operation'?'<span class="bdg b-op">OP</span>':'')+
       (item.volume>400000?'<span class="bdg b-hot">HOT</span>':'')+
       (price>0&&price<0.20?'<span class="bdg b-cheap">CHEAP</span>':'')+
-      '<div class="mob-info" style="display:none;margin-top:4px;display:flex;flex-wrap:wrap;gap:3px">'+
+      '<div class="mob-info" style="margin-top:4px;flex-wrap:wrap;gap:3px">'+
       '<span style="background:rgba(255,255,255,.06);border:1px solid #1a2535;border-radius:3px;padding:1px 5px;font-size:8px;color:#4a6080;font-family:Share Tech Mono,monospace">'+new Date(item.released).getFullYear()+'</span>'+
       '<span style="background:rgba(0,200,255,.06);border:1px solid rgba(0,200,255,.15);border-radius:3px;padding:1px 5px;font-size:8px;color:#00c8ff;font-family:Share Tech Mono,monospace">vol '+(item.volume>0?item.volume.toLocaleString('en'):'—')+'</span>'+
       '<span style="background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.15);border-radius:3px;padding:1px 5px;font-size:8px;color:#ffd700;font-family:Share Tech Mono,monospace">avg '+(avg>0&&price>0?'$'+avg.toFixed(2):'—')+'</span>'+
