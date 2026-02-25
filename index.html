@@ -293,12 +293,12 @@ th.sd::after{content:' ↓';color:var(--accent)}
     <table>
       <thead><tr>
         <th style="min-width:200px">CASE</th>
-        <th class="srt col-hide" data-c="age" onclick="sortBy('age')">RELEASE</th>
+        <th class="srt" data-c="age" onclick="sortBy('age')">RELEASE</th>
         <th class="srt" data-c="qty" onclick="sortBy('qty')">VOLUME</th>
         <th class="srt" data-c="price" onclick="sortBy('price')">PRICE</th>
-        <th class="col-hide" title="Weighted average price of cases with similar trading volume" style="cursor:help">AVG PRICE ⓘ</th>
+        <th title="Weighted average price of cases with similar trading volume" style="cursor:help">AVG PRICE <span onclick="event.stopPropagation();alert('AVG PRICE — средневзвешенная цена кейсов с похожим объёмом торгов.\n\nПоказывает норму для данного уровня популярности.\n\nЕсли цена ниже AVG — кейс дешевле нормы (потенциально выгодно купить).')" style="cursor:pointer;color:#00c8ff;font-size:11px">?</span></th>
         <th class="srt" data-c="delta" onclick="sortBy('delta')">DELTA</th>
-        <th class="srt col-hide" data-c="score" onclick="sortBy('score')">SCORE</th>
+        <th class="srt srt" data-c="score" onclick="sortBy('score')">SCORE</th>
         <th>VERDICT</th>
       </tr></thead>
       <tbody id="tbody"><tr><td colspan="8" class="empty"><div>⏳</div>Loading...</td></tr></tbody>
@@ -677,13 +677,13 @@ function render(pool){
       (item.volume>400000?'<span class="bdg b-hot">HOT</span>':'')+
       (price>0&&price<0.20?'<span class="bdg b-cheap">CHEAP</span>':'')+
       '</div></div></div></td>'+
-      '<td class="col-hide"><div class="mono" style="font-size:10px;color:'+(isRecent(item)?'var(--accent)':'var(--muted)')+'">'+new Date(item.released).getFullYear()+'</div>'+
+      '<td><div class="mono" style="font-size:10px;color:'+(isRecent(item)?'var(--accent)':'var(--muted)')+'">'+new Date(item.released).getFullYear()+'</div>'+
       '<div class="mono" style="font-size:9px;color:var(--muted)">'+ageStr+' ago</div></td>'+
       '<td class="mono" style="font-size:10px">'+(item.volume>0?item.volume.toLocaleString('en'):'—')+'</td>'+
       '<td class="mono" data-pn="'+item.name+'" style="color:'+pC+';font-weight:700;font-size:12px">'+(price>0?'$'+price.toFixed(2)+'<span class="pa"></span>':'—')+'</td>'+
-      '<td class="mono col-hide" style="font-size:10px;color:var(--muted)">'+(avg>0&&price>0?'$'+avg.toFixed(2):'—')+'</td>'+
+      '<td class="mono" style="font-size:10px;color:var(--muted)">'+(avg>0&&price>0?'$'+avg.toFixed(2):'—')+'</td>'+
       '<td>'+(price>0?'<span class="dlt '+dCls+'">'+dIco+' '+dStr+'</span>':'<span style="color:var(--muted);font-size:9px">—</span>')+'</td>'+
-      '<td class="col-hide"><div style="display:flex;align-items:center;gap:5px">'+
+      '<td><div style="display:flex;align-items:center;gap:5px">'+
       '<div style="width:38px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+sc+'%;background:'+scC+';border-radius:2px"></div></div>'+
       '<span class="mono" style="font-size:9px;color:'+scC+'">'+(price>0?sc:'—')+'</span></div></td>'+
       '<td><div class="vrd-wrap">'+vrdHTML+
