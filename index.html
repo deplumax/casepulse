@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CasePulse — CS2 Case Analytics</title>
+<title>Skinmanity — CS2 Case Analytics</title>
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 
@@ -229,7 +229,7 @@ th.sd::after{content:' ↓';color:var(--accent)}
   <div class="logo">
     <div class="logo-i">📦</div>
     <div>
-      <div class="logo-t">CASEPULSE</div>
+      <div class="logo-t">SKINMANITY</div>
       <div class="logo-s">CS2 CASE ANALYTICS</div>
     </div>
   </div>
@@ -1031,7 +1031,7 @@ async function resolveSteamId(input) {
   if (vanityMatch) {
     // Resolve vanity URL via our worker
     try {
-      const r = await fetch('https://casepulse.deplumaks.workers.dev/?vanity=' + encodeURIComponent(vanityMatch[1]));
+      const r = await fetch('https://skinmanity.deplumaks.workers.dev/?vanity=' + encodeURIComponent(vanityMatch[1]));
       const d = await r.json();
       if (d && d.steamid) return d.steamid;
     } catch(e) {}
@@ -1039,7 +1039,7 @@ async function resolveSteamId(input) {
   // Maybe they typed just a vanity name
   if (/^[a-zA-Z0-9_-]+$/.test(input) && input.length > 2) {
     try {
-      const r = await fetch('https://casepulse.deplumaks.workers.dev/?vanity=' + encodeURIComponent(input));
+      const r = await fetch('https://skinmanity.deplumaks.workers.dev/?vanity=' + encodeURIComponent(input));
       const d = await r.json();
       if (d && d.steamid) return d.steamid;
     } catch(e) {}
@@ -1081,7 +1081,7 @@ async function steamImport() {
   barEl.style.width = '10%';
   let items = [];
   try {
-    const r = await fetch('https://casepulse.deplumaks.workers.dev/?inventory=' + steamId);
+    const r = await fetch('https://skinmanity.deplumaks.workers.dev/?inventory=' + steamId);
     const d = await r.json();
     if (d.error) {
       statusEl.textContent = '❌ ' + (d.error === 'private' 
@@ -1722,9 +1722,9 @@ function closeChartModal(e) {
 // ════════════════════════════════════════════
 const FB_CONFIG = {
   apiKey:            "AIzaSyDWpkvKd8U5rih3YK7vVMmsQBIjslhTo5s",
-  authDomain:        "casepulse-40229.firebaseapp.com",
-  projectId:         "casepulse-40229",
-  storageBucket:     "casepulse-40229.firebasestorage.app",
+  authDomain:        "skinmanity-40229.firebaseapp.com",
+  projectId:         "skinmanity-40229",
+  storageBucket:     "skinmanity-40229.firebasestorage.app",
   messagingSenderId: "341334727568",
   appId:             "1:341334727568:web:7e2cca100477c4fb84b115",
   measurementId:     "G-G7GNLSMX38"
@@ -1913,7 +1913,7 @@ window.addEventListener('load',()=>{
     <div style="padding:20px 22px;border-bottom:1px solid #1a2535;display:flex;align-items:center;gap:10px">
       <div style="font-size:22px">📦</div>
       <div>
-        <div style="font-size:16px;font-weight:700;color:#fff;letter-spacing:1px">CASEPULSE</div>
+        <div style="font-size:16px;font-weight:700;color:#fff;letter-spacing:1px">SKINMANITY</div>
         <div style="font-size:9px;color:#4a6080;font-family:'Share Tech Mono',monospace;letter-spacing:2px">SIGN IN TO SYNC PORTFOLIO</div>
       </div>
     </div>
