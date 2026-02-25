@@ -166,10 +166,10 @@ th.sd::after{content:' ↓';color:var(--accent)}
   td.col-hide{display:none}
   th.mob-hide,td.mob-hide{display:none}
   table{table-layout:fixed;width:100%}
-  thead th:nth-child(1){width:40%}
+  thead th:nth-child(1){width:auto}
   thead th:nth-child(4){width:17%}
-  thead th:nth-child(6){width:14%}
-  thead th:nth-child(8){width:29%}
+  thead th:nth-child(6){width:15%}
+  thead th:nth-child(8){width:32%}
   td{padding:6px 5px;font-size:10px;vertical-align:top}
   th{padding:5px;font-size:9px;letter-spacing:.5px}
   .cn{font-size:10px;line-height:1.3}
@@ -182,7 +182,8 @@ th.sd::after{content:' ↓';color:var(--accent)}
   /* Verdict + Buy column */
   .vrd-wrap{display:flex;flex-direction:column;gap:4px;align-items:stretch}
   .vrd{font-size:8px;padding:2px 5px;text-align:center}
-  .steam-btn{font-size:9px;padding:5px 4px;width:100%;justify-content:center;display:flex;text-align:center}
+  .steam-btn{font-size:9px!important;padding:4px 3px!important;width:100%;justify-content:center;display:flex;text-align:center;white-space:nowrap}
+  #th-verdict{font-size:8px;letter-spacing:0;white-space:nowrap}
   .bdg{font-size:7px;padding:1px 4px}
 
   /* Modals */
@@ -318,14 +319,14 @@ th.sd::after{content:' ↓';color:var(--accent)}
   <div style="overflow-x:auto">
     <table>
       <thead><tr>
-        <th style="min-width:200px">CASE</th>
+        <th>CASE</th>
         <th class="srt mob-hide" data-c="age" onclick="sortBy('age')">RELEASE</th>
         <th class="srt mob-hide" data-c="qty" onclick="sortBy('qty')">VOLUME</th>
         <th class="srt" data-c="price" onclick="sortBy('price')">PRICE</th>
         <th class="mob-hide" title="Weighted average price of cases with similar trading volume" style="cursor:help">AVG PRICE <span onclick="event.stopPropagation();alert('AVG PRICE — средневзвешенная цена кейсов с похожим объёмом торгов.\n\nПоказывает норму для данного уровня популярности.\n\nЕсли цена ниже AVG — кейс дешевле нормы (потенциально выгодно купить).')" style="cursor:pointer;color:#00c8ff;font-size:11px">?</span></th>
         <th class="srt" data-c="delta" onclick="sortBy('delta')">DELTA</th>
-        <th class="srt srt" data-c="score" onclick="sortBy('score')">SCORE</th>
-        <th>VERDICT</th>
+        <th class="srt mob-hide" data-c="score" onclick="sortBy('score')">SCORE</th>
+        <th id="th-verdict">VERDICT</th>
       </tr></thead>
       <tbody id="tbody"><tr><td colspan="8" class="empty"><div>⏳</div>Loading...</td></tr></tbody>
     </table>
@@ -719,7 +720,7 @@ function render(pool){
       '<div style="width:38px;height:3px;background:var(--border);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+sc+'%;background:'+scC+';border-radius:2px"></div></div>'+
       '<span class="mono" style="font-size:9px;color:'+scC+'">'+(price>0?sc:'—')+'</span></div></td>'+
       '<td><div class="vrd-wrap">'+vrdHTML+
-      (price>0?'<a href="'+buyURL+'" target="_blank" class="steam-btn" onclick="event.stopPropagation()">🛒 Buy on Steam</a>':'')+
+      (price>0?'<a href="'+buyURL+'" target="_blank" class="steam-btn" onclick="event.stopPropagation()">🛒 Buy</a>':'')+
       '</div></td>'+
       '</tr>';
   });
